@@ -1,0 +1,43 @@
+# LLM configuration for stage 6.
+#
+# Determinism rules from docs/ingestion-plan.md section 3 are enforced in
+# code, not merely configured here:
+#   * temperature is pinned to 0 and cannot be raised
+#   * there is NO retry-at-higher-temperature; a failure is logged, not
+#     resampled until it complies
+#   * every response is cached by sha256(model, prompt, params) so a rebuild
+#     replays from disk and needs no API access
+models:
+  # Candidate extraction over residue text. Cheap and adequate: the task is
+  # span-extraction from tag soup, not reasoning.
+  extract: gpt-4.1-mini
+  # Merge adjudication. Only sees the ambiguous band, so volume is low and a
+  # stronger model is affordable.
+  adjudicate: gpt-4.1
+  embed: text-embedding-3-small
+
+# Per-ROLE temperature. Deliberately chosen per job, not globally pinned.
+#
+# This is NOT the retry-at-higher-temperature anti-pattern. That one
+# resamples a FAILED call at rising temperature until it complies, which
+# destroys reproducibility for exactly the hard cases. It remains banned.
+# Choosing a role's temperature up front is a different thing: it is a
+# declared property of that role, logged and cached with the response.
+#
+# Rationale: the recommender stays near-deterministic so it contributes no
+# variance of its own. The feedback agent runs warmer so its judgements
+# actually vary -- otherwise it would route identically every time and you
+# could not tell whether feedback processing is doing any work.
+temperature:
+  extract: 0.0        # span extraction from tag soup -- mechanical
+  adjudicate: 0.0     # merge decisions -- must be stable
+  plan_generator: 0.4 # needs genuinely diverse plans for best-of-N
+  reranker: 0.1       # ordering should be near-deterministic
+  feedback_agent: 0.7 # judgement should vary, so its contribution is measurable
+
+limits:
+  max_extract_calls: 2000      # hard ceiling; stage aborts rather than overrun
+  max_adjudicate_calls: 1500
+  embed_batch: 256
+  request_timeout_seconds: 90
+  max_retries: 3               # transport retries only, identical parameters

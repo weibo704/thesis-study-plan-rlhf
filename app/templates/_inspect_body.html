@@ -1,0 +1,202 @@
+<h1>How feedback reshapes the recommendation</h1>
+  <p class="muted">Every comparison a person makes is folded into the reward
+    model, in order, starting from the weights fitted offline on simulated
+    preferences. Nothing here is stored state — the model is replayed from the
+    event log each time this page loads, so this is how it actually got here.</p>
+
+  <div class="card">
+    <div class="stats" id="stats"></div>
+  </div>
+
+  <div class="card">
+    <h2>Update strength</h2>
+    <p class="faint">The step size applied per comparison, and how hard the
+      model is pulled back toward its offline prior. Larger steps make a
+      handful of comparisons visible in the ranking; they do not make the
+      result more reliable.</p>
+    <div class="ctl">
+      <div>
+        <label for="lr">Learning rate <span class="num" id="lrv"></span></label>
+        <input type="range" id="lr" min="0" max="1.2" step="0.05">
+      </div>
+      <div>
+        <label for="an">Pull toward prior <span class="num" id="anv"></span></label>
+        <input type="range" id="an" min="0" max="0.3" step="0.01">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>What the model believes</h2>
+    <p class="faint">Each feature's weight before and after real feedback.
+      Position on the axis is the weight; left of the line counts against a
+      plan, right of it counts for.</p>
+    <div class="legend">
+      <span class="key"><i class="dot" style="background:var(--prior)"></i>offline prior</span>
+      <span class="key"><i class="dot" style="background:var(--live)"></i>after feedback</span>
+    </div>
+    <div class="scroll"><div id="weights"></div></div>
+  </div>
+
+  <div class="card">
+    <h2>What that did to the ranking</h2>
+    <p class="faint" id="moveq"></p>
+    <div class="scroll"><div id="movement"></div></div>
+  </div>
+
+  <div class="card">
+    <h2>Every update, in order</h2>
+    <p class="faint">“Surprise” is how wrong the model was about which plan
+      the person would pick. A confident, correct prediction barely moves the
+      weights; a confident, wrong one moves them a lot.</p>
+    <div id="trace"></div>
+  </div>
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s==null?"":s).replace(/[&<>"']/g,
+    c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const f3 = n => (n>=0?"+":"−") + Math.abs(n).toFixed(3);
+
+  let DATA = null;
+
+  async function load(){
+    const u = new URL("/api/study/inspect", location.origin);
+    const k = new URLSearchParams(location.search).get("k");
+    if(k) u.searchParams.set("k", k);
+    u.searchParams.set("lr", $("#lr").value);
+    u.searchParams.set("anchor", $("#an").value);
+    const r = await fetch(u);
+    DATA = await r.json();
+    if(DATA.error){ $("#stats").innerHTML =
+      `<p class="empty">${esc(DATA.error)}</p>`; return; }
+    render();
+  }
+
+  function stats(d){
+    const moved = d.live.map((v,i) => Math.abs(v - d.prior[i]));
+    const biggest = moved.indexOf(Math.max(...moved));
+    $("#stats").innerHTML = [
+      [d.n_usable_pairs, "comparisons folded in"],
+      [d.n_participants, "people"],
+      [d.features[biggest].replace(/_/g," "), "moved most"],
+      [f3(d.live[biggest] - d.prior[biggest]), "by this much"],
+    ].map(([a,b]) => `<div class="stat"><b>${esc(a)}</b><span>${esc(b)}</span></div>`)
+     .join("");
+  }
+
+  // Dumbbell: one row per feature, prior and live on a shared axis, joined by
+  // the distance travelled. Two marks on one scale rather than paired bars,
+  // because the quantity people need is the MOVE, not the two magnitudes.
+  function weights(d){
+    const all = d.prior.concat(d.live);
+    const lim = Math.max(0.1, Math.max(...all.map(Math.abs))) * 1.18;
+    const W = 560, L = 186, R = 54, rowH = 34, H = d.features.length * rowH + 26;
+    const x = v => L + (v + lim) / (2*lim) * (W - L - R);
+    let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:520px"
+              role="img" aria-label="Feature weights before and after feedback">`;
+    s += `<line x1="${x(0)}" y1="14" x2="${x(0)}" y2="${H-14}"
+            stroke="var(--line)" stroke-width="1"/>`;
+    d.features.forEach((name, i) => {
+      const y = 22 + i*rowH, a = d.prior[i], b = d.live[i];
+      const delta = b - a;
+      s += `<text x="0" y="${y+4}" font-size="12" fill="var(--ink)">${esc(name.replace(/_/g," "))}</text>`;
+      if(Math.abs(delta) > 1e-6){
+        s += `<line x1="${x(a)}" y1="${y}" x2="${x(b)}" y2="${y}"
+                stroke="var(--line)" stroke-width="2" stroke-linecap="round"/>`;
+      }
+      s += `<circle cx="${x(a)}" cy="${y}" r="5" fill="var(--prior)"><title>${
+             esc(name)} prior ${a.toFixed(3)}</title></circle>`;
+      s += `<circle cx="${x(b)}" cy="${y}" r="5.5" fill="var(--live)"
+              stroke="var(--card)" stroke-width="2"><title>${
+             esc(name)} now ${b.toFixed(3)} (${f3(delta)})</title></circle>`;
+      s += `<text x="${W-R+8}" y="${y+4}" font-size="11.5" fill="var(--muted)"
+              style="font-variant-numeric:tabular-nums">${b.toFixed(2)}</text>`;
+    });
+    s += `<text x="${x(-lim)+2}" y="${H-2}" font-size="10.5" fill="var(--faint)">counts against</text>`;
+    s += `<text x="${x(lim)-4}" y="${H-2}" font-size="10.5" fill="var(--faint)"
+            text-anchor="end">counts for</text></svg>`;
+    $("#weights").innerHTML = s;
+  }
+
+  function movement(d){
+    const el = $("#movement");
+    if(!d.movement || !d.movement.length){
+      el.innerHTML = `<p class="empty">No plan set recorded yet. Run the study
+        once and the ranking it would produce now, versus before, shows here.</p>`;
+      $("#moveq").textContent = ""; return;
+    }
+    $("#moveq").textContent =
+      `The most recent plan set — “${d.movement_query || ""}” — reordered by the ` +
+      `weights above. Rank 1 is what a learner would now be shown first.`;
+    el.innerHTML = `<table><thead><tr>
+        <th>Plan</th><th style="text-align:right">Was</th>
+        <th style="text-align:right">Now</th><th style="text-align:right">Move</th>
+        <th style="text-align:right">Score</th></tr></thead><tbody>` +
+      d.movement.map(r => {
+        const cls = r.moved > 0 ? "up" : r.moved < 0 ? "down" : "flat";
+        const arrow = r.moved > 0 ? `↑ ${r.moved}` : r.moved < 0 ? `↓ ${-r.moved}` : "–";
+        return `<tr><td>${esc(r.strategy || r.plan_id)}</td>
+          <td class="n">${r.rank_before}</td><td class="n"><strong>${r.rank_after}</strong></td>
+          <td class="n ${cls}">${arrow}</td>
+          <td class="n">${r.after.toFixed(3)}</td></tr>`;
+      }).join("") + `</tbody></table>`;
+  }
+
+  function trace(d){
+    const el = $("#trace");
+    if(!d.history.length){
+      el.innerHTML = `<p class="empty">No comparisons yet. Each one a person
+        makes appears here with what it changed.</p>`; return;
+    }
+    el.innerHTML = d.history.slice().reverse().map(h => {
+      const top = h.delta.map((v,i) => [Math.abs(v), i])
+                    .sort((a,b) => b[0]-a[0]).slice(0,3)
+                    .filter(([m]) => m > 1e-4);
+      const moved = top.map(([,i]) =>
+        `<span class="pill">${esc(d.features[i].replace(/_/g," "))} ${f3(h.delta[i])}</span>`
+      ).join("") || `<span class="faint">nothing moved — the model already agreed</span>`;
+      const reasons = (h.reasons||[]).map(r =>
+        `<p class="quote">${(r.categories||[]).map(c =>
+          `<span class="pill">${esc(c.replace(/_/g," "))}</span>`).join("")}
+         ${esc(r.text||"")}</p>`).join("");
+      return `<div class="step">
+        <div class="muted" style="font-size:.82rem">#${h.index+1} ·
+          ${esc((h.created_at||"").replace("T"," ").replace("+00:00"," UTC"))}</div>
+        <div style="margin:3px 0 6px">Chose <strong>${esc(h.chosen.strategy||"a plan")}</strong>
+          over <strong>${esc(h.rejected.strategy||"the other")}</strong></div>
+        <div class="faint" style="margin-bottom:7px">Model gave the chosen plan
+          ${(h.p_before*100).toFixed(0)}% before seeing the answer —
+          surprise ${h.surprise.toFixed(2)}</div>
+        <div>${moved}</div>${reasons}</div>`;
+    }).join("");
+  }
+
+  function render(){
+    $("#lrv").textContent = Number($("#lr").value).toFixed(2);
+    $("#anv").textContent = Number($("#an").value).toFixed(2);
+    stats(DATA); weights(DATA); movement(DATA); trace(DATA);
+  }
+
+  // Called by the tab bar when this panel is revealed, so comparisons made
+  // in the other tab appear without a page reload.
+  window.__inspectReload = load;
+
+  let t = null;
+  ["#lr","#an"].forEach(id => $(id).addEventListener("input", () => {
+    $("#lrv").textContent = Number($("#lr").value).toFixed(2);
+    $("#anv").textContent = Number($("#an").value).toFixed(2);
+    clearTimeout(t); t = setTimeout(load, 180);
+  }));
+
+  const _k = new URLSearchParams(location.search).get("k");
+  fetch("/api/study/inspect" + (_k ? "?k=" + encodeURIComponent(_k) : ""))
+    .then(r => r.json()).then(d => {
+    $("#lr").value = d.defaults ? d.defaults.lr : 0.35;
+    $("#an").value = d.defaults ? d.defaults.anchor : 0.02;
+    DATA = d;
+    if(d.error){ $("#stats").innerHTML = `<p class="empty">${esc(d.error)}</p>`; }
+    else render();
+  });
+})();
+</script>

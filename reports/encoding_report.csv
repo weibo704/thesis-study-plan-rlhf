@@ -1,0 +1,4 @@
+source_id,rows,columns,encoding,lossless_decode,cells_repaired,cells_with_replacement_char
+coursera2021,3522,7,utf-8,True,6444,1992
+coursera2025,3404,9,utf-8,True,91,0
+coursera_hours,9595,13,utf-8,True,3148,0

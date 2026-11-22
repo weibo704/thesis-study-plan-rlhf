@@ -1,0 +1,22 @@
+# The replay cache is 248 MB and is build-time only.
+data/catalog/llm_cache/
+data/raw/
+data/catalog/*.csv
+data/agent/feedback/
+data/agent/policy_log_*
+data/agent/experiment_*
+data/agent/bestofn_*
+data/agent/bandit_log.parquet
+data/agent/baseline_recommendations.parquet
+.venv/
+.git/
+tests/
+docs/
+infra/
+reports/*.md
+reports/*.csv
+reports/*.parquet
+**/__pycache__/
+*.pyc
+.env
+.pytest_cache/

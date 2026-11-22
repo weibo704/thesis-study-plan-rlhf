@@ -1,0 +1,246 @@
+<!-- ---------------------------------------------------------- intro -->
+  <section id="intro">
+    <h1>Which study plan would you actually take?</h1>
+    <p class="muted">Tell us what you want to learn. We'll show you pairs of
+      study plans built from real online courses, and you pick the one you'd
+      rather follow. {{ rounds }} comparisons, about three minutes.</p>
+    <p class="muted"><strong>The catalog covers computer science, software
+      development and data science only</strong> — programming, web, data,
+      databases, machine learning, security, mobile. Anything outside that
+      and we'll tell you rather than invent a plan.</p>
+
+    <div class="card">
+      <label for="q">What do you want to learn, and where are you starting from?</label>
+      <textarea id="q" maxlength="400" placeholder="e.g. I want to move into data analysis at work. I'm comfortable with Excel but I've never written code."></textarea>
+      <div class="row">
+        <div>
+          <label for="level">How would you describe yourself?</label>
+          <select id="level">
+            <option value="0">New to this</option>
+            <option value="1">Some experience</option>
+            <option value="2">Experienced</option>
+          </select>
+        </div>
+        <div>
+          <label for="hours">Hours a week you can study</label>
+          <select id="hours">
+            <option>2</option><option>3</option><option selected>5</option>
+            <option>8</option><option>12</option><option>20</option>
+          </select>
+        </div>
+      </div>
+      <button class="primary" id="go">Show me two plans</button>
+      <div class="err" id="introErr" hidden></div>
+    </div>
+
+    <p class="notice">
+      This is part of a master's thesis on course recommendation. We record the
+      plans you were shown, which one you chose, and any reason you give. We do
+      <strong>not</strong> ask for or store your name, email, or anything else
+      that identifies you. Close the tab at any point and nothing further is kept.
+    </p>
+  </section>
+
+  <!-- ------------------------------------------------------- comparing -->
+  <section id="compare" hidden>
+    <p class="muted" id="progressLabel"></p>
+    <div class="bar"><i id="progressBar" style="width:0%"></i></div>
+    <h2>Which of these would you rather follow?</h2>
+    <p class="muted">Both are built from the same pool of courses. There's no
+      right answer — pick the one you'd genuinely rather do.</p>
+    <div class="plans" id="plans"></div>
+  </section>
+
+  <!-- ---------------------------------------------------------- reason -->
+  <section id="reason" hidden>
+    <div class="card">
+      <h2>Thanks. Anything wrong with the one you didn't pick?</h2>
+      <p class="muted">Optional — skip it if nothing stands out.</p>
+      <div class="chips" id="chips">
+        {% for key, label in reasons %}
+        <button type="button" class="chip" data-k="{{ key }}" aria-pressed="false">{{ label }}</button>
+        {% endfor %}
+      </div>
+      <label for="rtext">In your own words</label>
+      <textarea id="rtext" maxlength="600" placeholder="Optional"></textarea>
+      <button class="primary" id="nextBtn">Continue</button>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------ done -->
+  <section id="done" hidden>
+    <div class="card">
+      <h1>That's everything — thank you.</h1>
+      <p class="muted">Your comparisons go straight into the model that learns
+        which study plans are worth recommending. That's the part this research
+        is actually about.</p>
+      <button class="ghost" id="again">Try a different goal</button>
+    </div>
+  </section>
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const KEY = "thesis_participant_id";
+
+  // Opened straight off disk, this page cannot work: relative URLs have no
+  // host to resolve against, so the first fetch dies with "Failed to parse
+  // URL", and the Jinja tags were never rendered either. Say so plainly
+  // rather than letting a browser error stand in for an explanation.
+  // Checked as an allow-list, not a block-list: opened off disk the page
+  // can arrive as file:, about:, blob: or a data: snapshot, and only the
+  // http(s) cases can actually work.
+  if (location.protocol !== "http:" && location.protocol !== "https:"){
+    document.querySelector(".wrap").innerHTML =
+      '<h1>Open this through the app, not as a file</h1>' +
+      '<p class="muted">This is the page template. It needs the server to ' +
+      'fill it in and to answer its requests.</p>' +
+      '<div class="card"><p style="margin:0"><strong>Run</strong></p>' +
+      '<p class="muted" style="margin:6px 0 14px"><code>python -m app.server</code></p>' +
+      '<p style="margin:0"><strong>Then open</strong></p>' +
+      '<p class="muted" style="margin:6px 0 0">' +
+      '<a href="http://127.0.0.1:5001/study">http://127.0.0.1:5001/study</a></p></div>';
+    return;
+  }
+
+  // A pseudonymous id kept in this browser only. It groups one person's
+  // comparisons so they can be analysed together, and carries nothing that
+  // could identify them.
+  function participantId(){
+    let v = null;
+    try { v = localStorage.getItem(KEY); } catch(e){}
+    if(!/^[A-Za-z0-9_-]{8,64}$/.test(v||"")){
+      v = "p-" + (crypto.randomUUID ? crypto.randomUUID().replace(/-/g,"").slice(0,16)
+                                    : Math.random().toString(36).slice(2,18));
+      try { localStorage.setItem(KEY, v); } catch(e){}
+    }
+    return v;
+  }
+
+  let S = { plans:[], pairs:[], round:0, shownAt:0, lastChoice:null, rejected:null };
+
+  const esc = s => String(s==null?"":s).replace(/[&<>"']/g,
+    c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+  async function post(url, body){
+    let r;
+    try{
+      r = await fetch(new URL(url, location.origin), {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify(body)});
+    }catch(e){
+      // A dead server, a dropped connection, a page served from somewhere
+      // without an origin. The browser's own wording for these is no use
+      // to a participant.
+      throw new Error("We couldn't reach the server. Check your connection "
+                      + "and try again.");
+    }
+    const j = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(j.error || `Something went wrong (${r.status}).`);
+    return j;
+  }
+
+  function planCard(p, side){
+    const courses = p.courses.map(c =>
+      `<li>${esc(c.title)}<span class="lv">${esc(c.level||"level unknown")}${
+        c.hours ? " · about " + Math.round(c.hours) + " h" : ""}</span></li>`).join("");
+    const why = (p.rationale.points||[]).map(x => `<li>${esc(x)}</li>`).join("");
+    return `<div class="plan">
+      <span class="tag">${esc(p.rationale.strategy || ("Plan " + (side+1)))}</span>
+      <ol class="courses">${courses}</ol>
+      <div class="why"><strong>Why this plan</strong><ul>${why}</ul></div>
+      <button class="pick" data-pid="${esc(p.plan_id)}">Choose this one</button>
+    </div>`;
+  }
+
+  function renderPair(){
+    const [i,j] = S.pairs[S.round];
+    const a = S.plans[i], b = S.plans[j];
+    $("#plans").innerHTML = planCard(a,0) + planCard(b,1);
+    $("#progressLabel").textContent = `Comparison ${S.round+1} of ${S.pairs.length}`;
+    $("#progressBar").style.width = (S.round / S.pairs.length * 100) + "%";
+    S.shownAt = performance.now();
+    $("#plans").querySelectorAll(".pick").forEach(btn => {
+      btn.addEventListener("click", () => choose(a, b, btn.dataset.pid), {once:true});
+    });
+    show("compare");
+    window.scrollTo({top:0, behavior:"smooth"});
+  }
+
+  function show(which){
+    ["intro","compare","reason","done"].forEach(s =>
+      $("#"+s).hidden = (s !== which));
+  }
+
+  async function choose(a, b, chosenId){
+    const secs = (performance.now() - S.shownAt)/1000;
+    S.rejected = (chosenId === a.plan_id) ? b : a;
+    try{
+      const r = await post("/api/study/choose", {
+        plans_event_id: S.plans_event_id, participant_id: S.participant_id,
+        session_id: S.session_id, round_index: S.round,
+        left_plan_id: a.plan_id, right_plan_id: b.plan_id,
+        chosen_plan_id: chosenId, seconds_on_screen: secs });
+      S.lastChoice = r.choice_event_id;
+    }catch(e){ /* a lost log must not strand the participant mid-study */ }
+    $("#rtext").value = "";
+    $("#chips").querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed","false"));
+    show("reason");
+    window.scrollTo({top:0, behavior:"smooth"});
+  }
+
+  $("#chips").addEventListener("click", e => {
+    const c = e.target.closest(".chip"); if(!c) return;
+    c.setAttribute("aria-pressed", c.getAttribute("aria-pressed") === "true" ? "false" : "true");
+  });
+
+  $("#nextBtn").addEventListener("click", async () => {
+    const cats = [...$("#chips").querySelectorAll('.chip[aria-pressed="true"]')]
+                   .map(c => c.dataset.k);
+    const text = $("#rtext").value.trim();
+    if(cats.length || text){
+      try{
+        await post("/api/study/reason", {
+          choice_event_id: S.lastChoice, participant_id: S.participant_id,
+          session_id: S.session_id, plan_id: S.rejected ? S.rejected.plan_id : "",
+          reason_categories: cats, reason_text: text });
+      }catch(e){}
+    }
+    S.round += 1;
+    if(S.round >= S.pairs.length){ $("#progressBar").style.width = "100%"; show("done"); }
+    else renderPair();
+  });
+
+  $("#go").addEventListener("click", async () => {
+    const btn = $("#go"), err = $("#introErr");
+    err.hidden = true;
+    btn.disabled = true; btn.textContent = "Building your plans…";
+    try{
+      const r = await post("/api/study/start", {
+        query: $("#q").value, level: Number($("#level").value),
+        weekly_hours: Number($("#hours").value), participant_id: participantId() });
+      S = Object.assign(S, r, {round:0});
+      if(r.thin_coverage){
+        // Honest about a weak match rather than passing a stretch off as a
+        // confident answer -- which also tells us what to make of the
+        // comparisons that follow.
+        const n = document.createElement("p");
+        n.className = "muted";
+        n.style.cssText = "border-left:3px solid var(--amber);padding-left:12px";
+        n.textContent = "Heads up: our catalog covers this topic only thinly, "
+          + "so these plans may be more of a stretch than usual.";
+        $("#compare").insertBefore(n, $("#plans"));
+      }
+      renderPair();
+    }catch(e){
+      err.textContent = e.message; err.hidden = false;
+    }finally{
+      btn.disabled = false; btn.textContent = "Show me two plans";
+    }
+  });
+
+  $("#again").addEventListener("click", () => {
+    S = { plans:[], pairs:[], round:0, shownAt:0, lastChoice:null, rejected:null };
+    $("#q").value = ""; show("intro");
+  });
+})();
+</script>

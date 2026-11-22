@@ -1,0 +1,77 @@
+name: poc-v5-shaped
+frozen_at: '2026-10-01T02:11:19+00:00'
+dataset_version: v1-2026-09-20
+reward_spec:
+  name: poc-v5-shaped
+  w_topic: 0.5
+  w_too_hard: 0.45
+  w_too_easy: 0.15
+  w_time: 0.15
+  w_quality: 0.1
+  w_goal: 0.0
+  w_progress_step: 2.5
+  w_goal_terminal: 0.0
+  w_unknown_penalty: 0.05
+  notes: Author-specified. No real thumbs-down feedback was collected (n=0), so weights
+    are set from term-balance analysis over the actual arm pool rather than grounded
+    in observed reason counts. Each weight's rationale is recorded in this bundle.
+  grounded_in: {}
+  content_sha256: 14c50e8a8b864f699a90a20b82141f9427d6c6534f6570bf213104a603bc8ee3
+  dataset_version: v1-2026-09-20
+  asymmetry_ok: true
+rationale:
+  w_topic: The learner's stated goal is the primary signal. Scaled so topic contributes
+    ~29% of total reward spread across the pool.
+  w_too_hard: "A one-level overshoot costs 0.45 \u2014 as much as the ENTIRE topic\
+    \ range. Being pushed past your depth should outweigh a better topic match, which\
+    \ is the sequencing behaviour under study."
+  w_too_easy: Boredom is real but milder than frustration. Set to one third of w_too_hard
+    (3:1), keeping the term asymmetric; a symmetric penalty would make the optimal
+    policy level-neutral and erase sequencing.
+  w_time: Over-budget is penalised but capped at 2x the learner's budget. At the earlier
+    3x clip time became the single largest term, ahead of both topic and difficulty.
+  w_quality: Ratings are a selection-biased popularity signal, not per-user utility,
+    so the contribution is clipped to [-0.15, +0.10]. Uncapped, 1-star outliers spanned
+    as much reward as the whole topic range.
+  w_unknown_penalty: A small cost per missing field so a course with no level and
+    no duration cannot win on silence. Kept to ~6% of spread.
+  w_progress_step: 'DENSE goal credit: pays each step for the goal progress that step
+    produced. Learnable by a myopic policy. Paired with w_goal_terminal to separate
+    goal-orientation from delayed credit assignment.'
+  w_goal_terminal: 'SPARSE goal credit: a single payout at episode end proportional
+    to goal attainment. The fit terms are myopic -- a learner could take eight well-fitted
+    courses, reach nothing they came for, and collect maximum reward. This makes completion
+    the objective, and requires credit assignment across the episode.'
+  w_goal: Overlap with skills the learner still LACKS from their stated goal. Absent
+    in poc-v1, which scored only present-tense fit. The bandit learned +0.006 on that
+    feature -- correct, since nothing credited it -- and so ignored goal progress,
+    ending at 0.25 against the baseline's 0.45 while earning MORE reward. Added because
+    the reward omitted the stated objective; this is a specification gap, not weight-tuning
+    to favour a policy.
+dependencies:
+  skills:
+    path: data/catalog/skills.parquet
+    sha256: faad020a17bdbbd6a8c89ac487164022693ea31784d18ff9e2231d475ab92a3e
+  skill_prereqs:
+    path: data/world/skill_prereqs.parquet
+    sha256: 8dc424963a821b2510f172b029de2c33077c7a522759492419b6ca2be7e16259
+  study_plans:
+    path: data/world/study_plans.parquet
+    sha256: 5f7ddfdbeec9385ece596f9c977524b0fea23a041a0047d022729ff9fd7b7a3c
+  study_plan_items:
+    path: data/world/study_plan_items.parquet
+    sha256: d5684ead34ccb1ba5f03de15f5d7e4bce8cba0364ee7e2d533ae4f6c29797c7b
+  users:
+    path: data/world/users.parquet
+    sha256: 9e50b6b7605da7afbc9ea2dedcdad94c0983422f0baccb6ac08d70742a4bd994
+  user_latent_state:
+    path: data/world/user_latent_state.parquet
+    sha256: 2c0c02435e9f13c69cb602795efb73d0873d7a186dd15999751e0d4adc286645
+  arm_features:
+    path: data/agent/arm_features.parquet
+    sha256: 1ca5b2c5c5eb665b26df339092860c40d0bc9f331d695bdaa1944de9fda7ebd5
+  arm_feature_spec:
+    path: data/agent/arm_feature_spec.yaml
+    sha256: 3e9acd4bec92776149cfb075ab8501ba315f0000d28579882ec63e38db9f5504
+declared_before_any_bandit_run: true
+bundle_sha256: a7be07763f05885ada313e4f3d4ccae9083f504da807e8b892be5f4c0a1befc1

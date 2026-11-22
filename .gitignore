@@ -1,0 +1,39 @@
+# ---- secrets. Never commit. ----
+.env
+.env.*
+!.env.example
+
+# ---- environments ----
+.venv/
+infra/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# ---- build output ----
+infra/cdk.out/
+infra/cdk-outputs.json
+*.egg-info/
+
+# ---- data: regenerable, large, or not redistributable ----
+# Raw downloads and staging rebuild from `python -m pipeline.stage01_fetch`.
+data/raw/
+data/staging/
+
+# The response cache is 10,329 files / 249 MB and is what lets the pipeline
+# replay with no API access. It also embeds course descriptions from a source
+# whose licence is "Unknown" (config/sources.yaml marks it
+# redistributable: false), so it must not go into a public repo. Archive it
+# separately, or un-ignore it if this repo stays private.
+data/catalog/llm_cache/
+
+# Frozen catalog artifacts carry source text from the same non-redistributable
+# dataset. Rebuild with the pipeline rather than committing them.
+data/catalog/*.parquet
+data/staging/*.parquet
+
+# Collected study feedback: participant data, kept out of version control.
+data/agent/feedback/
+
+# ---- macOS ----
+.DS_Store

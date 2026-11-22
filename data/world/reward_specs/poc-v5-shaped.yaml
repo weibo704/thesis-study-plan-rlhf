@@ -1,0 +1,17 @@
+name: poc-v5-shaped
+w_topic: 0.5
+w_too_hard: 0.45
+w_too_easy: 0.15
+w_time: 0.15
+w_quality: 0.1
+w_goal: 0.0
+w_progress_step: 2.5
+w_goal_terminal: 0.0
+w_unknown_penalty: 0.05
+notes: Author-specified. No real thumbs-down feedback was collected (n=0), so weights
+  are set from term-balance analysis over the actual arm pool rather than grounded
+  in observed reason counts. Each weight's rationale is recorded in this bundle.
+grounded_in: {}
+content_sha256: 14c50e8a8b864f699a90a20b82141f9427d6c6534f6570bf213104a603bc8ee3
+dataset_version: v1-2026-09-20
+asymmetry_ok: true

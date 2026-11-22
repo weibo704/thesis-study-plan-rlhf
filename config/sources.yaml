@@ -1,0 +1,97 @@
+# Source registry. Licences and field inventories verified 2026-09-20
+# against the live Kaggle dataset pages. See docs/ingestion-plan.md section 1.
+dataset_version: v1-2026-09-20
+
+sources:
+  coursera2021:
+    name: Coursera Courses Dataset 2021
+    kaggle_ref: khusheekapoor/coursera-courses-dataset-2021
+    filename: Coursera.csv
+    url: https://www.kaggle.com/datasets/khusheekapoor/coursera-courses-dataset-2021
+    platform: Coursera
+    license: Unknown
+    terms_url: https://www.kaggle.com/datasets/khusheekapoor/coursera-courses-dataset-2021
+    redistributable: false
+    role: spine
+    snapshot: "2021-09"
+    notes: >-
+      Only source pairing full descriptions with skill tags. Carries a real
+      /learn/<slug> URL, used as the natural key. Licence is literally
+      "Unknown" on Kaggle, so raw text must not be exported.
+
+  coursera2025:
+    name: Coursera Courses and Skills dataset 2025
+    kaggle_ref: yosefxx590/coursera-courses-and-skills-dataset-2025
+    filename: Coursera.csv
+    url: https://www.kaggle.com/datasets/yosefxx590/coursera-courses-and-skills-dataset-2025
+    platform: Coursera
+    license: Apache-2.0
+    terms_url: https://www.apache.org/licenses/LICENSE-2.0
+    redistributable: true
+    role: donor
+    snapshot: "2024"
+    notes: >-
+      Field donor only; never creates a course row. Supplies duration,
+      learning_product and review counts that the 2021 spine lacks.
+
+  edx:
+    name: edX Courses
+    kaggle_ref: imuhammad/edx-courses
+    filename: edx_courses.csv
+    url: https://www.kaggle.com/datasets/imuhammad/edx-courses
+    platform: edX
+    license: GPL-2
+    terms_url: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+    redistributable: false
+    role: platform
+    enabled: false
+    snapshot: "2020"
+    notes: >-
+      DISABLED 2026-09-27. Contributed 298 arms (13.6% of the pool) and
+      ZERO skills -- edX has no skills column at source -- and zero ratings.
+      Those 298 skill-less, rating-less arms were the entire reason the
+      provider was perfectly predictable from the feature matrix
+      (AUC 1.000): `has_any_skill` alone separated the platforms, so any
+      reward term over duration or rating was partly a provider term.
+      Dropping edX removes the confound structurally and RAISES rating
+      coverage from 83.5% to 96.7%. Cost: effort-hours coverage falls
+      53.8% -> 46.5%, and 123 unused syllabus texts are lost (the planned
+      prerequisite extraction from syllabi was never implemented).
+      Re-enable by deleting this flag if a cross-platform comparison is
+      wanted later; expect the leakage to return.
+
+  coursera_hours:
+    name: Coursera Dataset (with duration)
+    kaggle_ref: elvinrustam/coursera-dataset
+    filename: CourseraDataset-Unclean.csv
+    url: https://www.kaggle.com/datasets/elvinrustam/coursera-dataset
+    platform: Coursera
+    license: CC0-1.0
+    terms_url: https://creativecommons.org/publicdomain/zero/1.0/
+    redistributable: true
+    role: donor
+    snapshot: "2024"
+    notes: >-
+      Second donor, and the only source of real effort HOURS for Coursera
+      ("20 hours (approximately)"). Crucially it carries Course Url, so it
+      joins on url_slug EXACTLY rather than on drifting titles: 57.4% slug
+      overlap with the 2021 spine versus 20.4% for the title-matched 2025
+      donor. Also supplies list-formatted skill tags.
+
+  udemy:
+    name: IT & Software Courses Udemy - 22k+ courses
+    kaggle_ref: jilkothari/it-software-courses-udemy-22k-courses
+    filename: udemy_output_All_IT__Software_p1_p626.csv
+    url: https://www.kaggle.com/datasets/jilkothari/it-software-courses-udemy-22k-courses
+    platform: Udemy
+    license: CC0-1.0
+    terms_url: https://creativecommons.org/publicdomain/zero/1.0/
+    redistributable: true
+    role: excluded
+    enabled: false
+    snapshot: "2020"
+    notes: >-
+      DISABLED. Cleanest licence of the five candidates but has no
+      description, no skill tags and no difficulty level. Including it would
+      leave ~85% of arms title-only and make "bandit beats baseline" partly a
+      measure of which provider has metadata. Kept behind a flag.

@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{ 'Study plans — thesis' if show_inspect else 'Which study plan would you take?' }}</title>
+<style>
+  :root{
+    --bg:#FAF8F5; --card:#FFFFFF; --ink:#1A1F26; --muted:#5A6572; --faint:#8A95A1;
+    --line:#E4E0D8; --grid:#EFECE6;
+    --amber:#B06A00; --amber-soft:#FDF3E2; --teal:#0D6158; --teal-soft:#E3F1EF;
+    --indigo:#3A4A9F; --rust:#A33A22; --rust-soft:#FBEAE5;
+    /* chart pair, validated: CVD dE 26.1, normal-vision dE 30.0 */
+    --prior:#3A4A9F; --live:#B06A00; --good:#0D6158; --bad:#A33A22;
+    --radius:12px; color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#15181C; --card:#1E2328; --ink:#ECEFF2; --muted:#9BA6B2; --faint:#7B8795;
+      --line:#2F363D; --grid:#272D34;
+      --amber:#E0A040; --amber-soft:#2A2117; --teal:#5FBFAE; --teal-soft:#152724;
+      --indigo:#8E9BE0; --rust:#E08A6E; --rust-soft:#2B1915;
+      /* re-stepped for the dark surface, not flipped: both inside L 0.48-0.67 */
+      --prior:#6B7BC9; --live:#BE7F22; --good:#5FBFAE; --bad:#E08A6E;
+      color-scheme:dark;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+       padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+  .wrap{max-width:1040px;margin:0 auto;padding:22px 18px 60px}
+  h1{font-size:1.5rem;line-height:1.25;margin:0 0 6px;text-wrap:balance}
+  h2{font-size:1.08rem;margin:0 0 4px}
+  p{margin:0 0 12px}
+  .muted{color:var(--muted);font-size:.93rem}
+  .faint{color:var(--faint);font-size:.82rem}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+        padding:18px;margin-bottom:18px}
+  .num{font-variant-numeric:tabular-nums}
+  a{color:var(--prior)}
+
+  /* ---- tab bar ---- */
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:0 0 22px;
+        overflow-x:auto}
+  .tab{appearance:none;background:none;border:0;border-bottom:2px solid transparent;
+       color:var(--muted);font:inherit;font-size:.95rem;font-weight:600;
+       padding:11px 15px;cursor:pointer;white-space:nowrap;margin-bottom:-1px}
+  .tab:hover{color:var(--ink)}
+  .tab[aria-selected="true"]{color:var(--teal);border-bottom-color:var(--teal)}
+  .panel[hidden]{display:none !important}
+
+  /* ---- forms ---- */
+  label{display:block;font-weight:600;font-size:.92rem;margin:16px 0 6px}
+  textarea,select,input{width:100%;font:inherit;color:var(--ink);background:var(--card);
+    border:1px solid var(--line);border-radius:8px;padding:11px 12px}
+  textarea{min-height:88px;resize:vertical}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .row>div{flex:1 1 180px;min-width:0}
+  button{font:inherit;font-weight:600;cursor:pointer;border-radius:9px;
+         border:1px solid transparent;padding:12px 18px}
+  .primary{background:var(--teal);color:#fff;width:100%;margin-top:20px}
+  .primary:disabled{opacity:.55;cursor:default}
+  .ghost{background:transparent;border-color:var(--line);color:var(--muted)}
+
+  /* ---- study ---- */
+  .plans{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}
+  @media (max-width:720px){ .plans{grid-template-columns:1fr} }
+  .plan{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+        padding:16px;display:flex;flex-direction:column}
+  .plan h3{margin:0 0 10px;font-size:1rem}
+  .tag{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.04em;
+       text-transform:uppercase;padding:3px 8px;border-radius:999px;
+       background:var(--amber-soft);color:var(--amber);margin-bottom:10px}
+  ol.courses{margin:0 0 12px;padding-left:20px}
+  ol.courses li{margin-bottom:7px;font-size:.93rem}
+  .lv{font-size:.76rem;color:var(--muted);display:block}
+  .why{background:var(--teal-soft);border-radius:9px;padding:11px 13px;margin:auto 0 12px}
+  .why strong{display:block;font-size:.76rem;letter-spacing:.04em;text-transform:uppercase;
+              color:var(--teal);margin-bottom:5px}
+  .why ul{margin:0;padding-left:17px}
+  .why li{font-size:.86rem;margin-bottom:4px;color:var(--ink)}
+  .pick{background:var(--amber);color:#fff;width:100%}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
+  .chip{border:1px solid var(--line);background:var(--card);color:var(--muted);
+        border-radius:999px;padding:7px 13px;font-size:.87rem;font-weight:500}
+  .chip[aria-pressed="true"]{background:var(--rust-soft);border-color:var(--rust);
+        color:var(--rust);font-weight:600}
+  .bar{height:5px;background:var(--line);border-radius:999px;overflow:hidden;margin:4px 0 20px}
+  .bar i{display:block;height:100%;background:var(--teal);transition:width .3s}
+  .err{background:var(--rust-soft);color:var(--rust);border-radius:9px;padding:11px 13px;
+       margin-top:14px;font-size:.92rem}
+  .notice{font-size:.84rem;color:var(--muted);border-left:3px solid var(--line);
+          padding-left:12px;margin:18px 0 0}
+
+  /* ---- inspector ---- */
+  .ctl{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-end}
+  .ctl>div{flex:1 1 210px;min-width:0}
+  input[type=range]{width:100%;accent-color:var(--live);padding:0}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:14px}
+  .stat b{display:block;font-size:1.5rem;line-height:1.1;font-variant-numeric:tabular-nums}
+  .stat span{font-size:.8rem;color:var(--muted)}
+  .legend{display:flex;gap:18px;align-items:center;margin:2px 0 16px;font-size:.85rem;
+          color:var(--muted)}
+  .key{display:inline-flex;align-items:center;gap:7px}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+  table{width:100%;border-collapse:collapse;font-size:.88rem}
+  th{text-align:left;font-size:.74rem;letter-spacing:.05em;text-transform:uppercase;
+     color:var(--muted);font-weight:600;padding:0 10px 7px 0;border-bottom:1px solid var(--line)}
+  td{padding:9px 10px 9px 0;border-bottom:1px solid var(--grid);vertical-align:top}
+  td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .up{color:var(--good);font-weight:600}
+  .down{color:var(--bad);font-weight:600}
+  .flat{color:var(--faint)}
+  .step{border-left:2px solid var(--line);padding:0 0 18px 16px;position:relative}
+  .step:last-child{padding-bottom:0}
+  .step::before{content:"";position:absolute;left:-6px;top:3px;width:10px;height:10px;
+                border-radius:50%;background:var(--live)}
+  .pill{display:inline-block;font-size:.72rem;font-weight:700;padding:2px 8px;
+        border-radius:999px;background:var(--grid);color:var(--muted);margin-right:6px}
+  .quote{border-left:2px solid var(--line);padding-left:10px;color:var(--muted);
+         font-size:.86rem;margin:7px 0 0}
+  .scroll{overflow-x:auto}
+  .empty{color:var(--muted);font-size:.9rem;padding:8px 0}
+  [hidden]{display:none !important}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+{% if show_inspect %}
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-study" aria-controls="panel-study"
+            aria-selected="true">Run the study</button>
+    <button class="tab" role="tab" id="tab-model" aria-controls="panel-model"
+            aria-selected="false">Feedback &rarr; model</button>
+  </div>
+{% endif %}
+
+<section class="panel" id="panel-study" role="tabpanel" aria-labelledby="tab-study">
+{% include "_study_body.html" %}
+</section>
+
+{% if show_inspect %}
+<section class="panel" id="panel-model" role="tabpanel" aria-labelledby="tab-model" hidden>
+{% include "_inspect_body.html" %}
+</section>
+{% endif %}
+
+</div>
+
+{% if show_inspect %}
+<script>
+(function(){
+  // Tabs carry the token through in the URL, so a reload or a copied link
+  // lands on the same view with the same access.
+  const tabs = [["tab-study","panel-study","study"], ["tab-model","panel-model","model"]];
+  function show(name, push){
+    tabs.forEach(([t,p,n]) => {
+      const sel = n === name;
+      document.getElementById(t).setAttribute("aria-selected", sel ? "true" : "false");
+      document.getElementById(p).hidden = !sel;
+    });
+    if(push){
+      const u = new URL(location.href);
+      u.searchParams.set("tab", name);
+      history.replaceState(null, "", u);
+    }
+    // The inspector reads its own data on load; refresh it when revealed so
+    // comparisons made in the other tab show up without a reload.
+    if(name === "model" && window.__inspectReload) window.__inspectReload();
+  }
+  tabs.forEach(([t,,n]) =>
+    document.getElementById(t).addEventListener("click", () => show(n, true)));
+  show(new URLSearchParams(location.search).get("tab") === "model" ? "model" : "study", false);
+})();
+</script>
+{% endif %}
+</body>
+</html>

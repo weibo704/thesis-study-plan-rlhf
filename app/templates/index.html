@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Course Catalog Explorer</title>
+<style>
+:root{
+  --ink:#2b2520; --muted:#7d7168; --faint:#a1958a;
+  --bg:#faf7f2; --surface:#fff; --line:#e7dfd4;
+  --accent:#1f6f5c; --accent-soft:#e6f0ec; --accent-deep:#14523f;
+  --clay:#b5542f; --clay-soft:#fbeee7; --sand:#f3ece1;
+}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.55 "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+     color:var(--ink);background:var(--bg)}
+header{background:var(--surface);border-bottom:1px solid var(--line);padding:20px 30px}
+header h1{margin:0;font-size:19px;font-weight:660;letter-spacing:-.2px}
+header p{margin:5px 0 0;font-size:13px;color:var(--muted)}
+nav{display:flex;gap:26px;background:var(--surface);padding:0 30px;
+    border-bottom:1px solid var(--line)}
+nav button{background:none;border:0;color:var(--muted);padding:12px 0;font:inherit;
+  font-size:14px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+nav button:hover{color:var(--ink)}
+nav button.on{color:var(--accent-deep);border-bottom-color:var(--accent);font-weight:600}
+main{max-width:1160px;margin:0 auto;padding:26px 30px 70px}
+.panel{display:none}.panel.on{display:block}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+input[type=text],select{padding:9px 13px;border:1px solid var(--line);border-radius:7px;
+  font:inherit;background:var(--surface);color:var(--ink)}
+input[type=text]{flex:1;min-width:330px}
+input[type=text]:focus,select:focus{outline:0;border-color:var(--accent)}
+button.go{background:var(--accent);color:#fff;border:0;border-radius:7px;padding:9px 22px;
+  font:inherit;font-weight:600;cursor:pointer}
+button.go:hover{background:var(--accent-deep)}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+.chip{background:var(--sand);border:1px solid var(--line);border-radius:6px;padding:5px 12px;
+  font-size:12.5px;cursor:pointer;color:var(--muted)}
+.chip:hover{border-color:var(--accent);color:var(--accent-deep);background:var(--accent-soft)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:16px 18px;margin-bottom:11px}
+.card h3{margin:0 0 7px;font-size:16px;font-weight:620;padding-right:60px}
+.card h3 a{color:var(--ink);text-decoration:none}
+.card h3 a:hover{color:var(--accent-deep);text-decoration:underline}
+.meta{display:flex;gap:7px;flex-wrap:wrap;align-items:center;font-size:12.5px;
+  color:var(--muted);margin-bottom:9px}
+.tag{background:var(--accent-soft);color:var(--accent-deep);border-radius:4px;
+  padding:2px 8px;font-size:11.5px;font-weight:500}
+.tag.grey{background:var(--sand);color:var(--muted)}
+.tag.gap{background:var(--clay-soft);color:var(--clay)}
+.desc{font-size:13.5px;color:#5c5249;margin:0 0 10px}
+.skills{display:flex;gap:6px;flex-wrap:wrap}
+.skill{background:var(--sand);border-radius:4px;padding:2px 8px;font-size:11.5px;color:#6b5f54}
+.score{float:right;font-variant-numeric:tabular-nums;color:var(--accent);font-weight:660;font-size:13px}
+table{width:100%;border-collapse:collapse;background:var(--surface);
+  border:1px solid var(--line);border-radius:9px;overflow:hidden}
+th,td{text-align:left;padding:9px 14px;border-bottom:1px solid var(--line);font-size:13.5px}
+th{background:var(--sand);font-weight:620;color:#5c5249}
+tr:last-child td{border-bottom:0}
+.bar{display:inline-block;height:6px;border-radius:3px;background:var(--accent);vertical-align:middle}
+.step{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);
+  border-radius:8px;padding:12px 16px;margin-bottom:10px}
+.step b{font-size:12.5px;color:var(--muted);font-weight:620;letter-spacing:.02em}
+.note{background:var(--sand);border:1px solid var(--line);border-radius:8px;
+  padding:11px 15px;font-size:13px;color:#5c5249;margin-bottom:16px}
+.note b{color:var(--ink)}
+.empty{color:var(--faint);padding:34px 0;text-align:center}
+.vote{display:flex;gap:6px;align-items:center;margin-top:10px;
+  padding-top:10px;border-top:1px solid var(--line)}
+.vote button{background:var(--surface);border:1px solid var(--line);border-radius:6px;
+  padding:4px 11px;font:inherit;font-size:13px;cursor:pointer;color:var(--muted)}
+.vote button:hover{border-color:var(--accent);color:var(--accent-deep)}
+.vote button.up.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-deep)}
+.vote button.down.on{background:var(--clay-soft);border-color:var(--clay);color:var(--clay)}
+.vote .prop{margin-left:auto;font-size:11.5px;color:var(--faint);font-variant-numeric:tabular-nums}
+.reason{display:none;margin-top:9px;gap:7px}
+.reason.on{display:flex}
+.reason input{flex:1;font-size:13.5px;padding:7px 11px}
+.reason button{background:var(--clay);color:#fff;border:0;border-radius:6px;
+  padding:7px 15px;font:inherit;font-size:13px;cursor:pointer}
+.refine{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:14px;
+  font-size:13px;color:var(--muted)}
+.refine .r{background:var(--clay-soft);border:1px solid #edd9cd;color:var(--clay);
+  border-radius:6px;padding:4px 11px;font-size:12.5px}
+.refine .clear{color:var(--accent-deep);cursor:pointer;text-decoration:underline;font-size:12.5px}
+.tally{font-size:12.5px;color:var(--faint);margin-left:auto}
+.agent{margin-top:11px;border:1px solid var(--line);border-radius:9px;
+  background:var(--sand);padding:12px 14px}
+.agent h4{margin:0 0 9px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);font-weight:700}
+.node{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);
+  border-radius:7px;padding:9px 12px;margin-bottom:7px}
+.node.record{border-left-color:var(--faint)}
+.node.clarify{border-left-color:var(--clay)}
+.node .nm{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--accent-deep)}
+.node.record .nm{color:var(--muted)} .node.clarify .nm{color:var(--clay)}
+.node .body{font-size:13px;margin-top:4px;color:#5c5249}
+.node .kv{font-size:11.5px;color:var(--faint);margin-top:3px;font-family:ui-monospace,monospace}
+.flow{font-size:11.5px;color:var(--faint);font-family:ui-monospace,monospace;margin-top:6px}
+.agentbar{display:flex;gap:8px;align-items:center;font-size:12.5px;color:var(--muted);
+  margin-bottom:12px}
+.agentbar input{accent-color:var(--accent)}
+.sliders{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:14px;
+  background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:16px}
+.sl label{display:block;font-size:13px;font-weight:600;margin-bottom:3px}
+.sl .why{font-size:11.5px;color:var(--faint);margin-bottom:6px}
+.sl input[type=range]{width:100%;accent-color:var(--accent)}
+.sl .val{float:right;font-variant-numeric:tabular-nums;color:var(--accent-deep);font-weight:600}
+.warn{background:var(--clay-soft);border:1px solid #edd9cd;color:var(--clay);
+  border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.cmp h4{margin:0 0 8px;font-size:13px;color:var(--muted);font-weight:620}
+.mini{background:var(--surface);border:1px solid var(--line);border-radius:7px;
+  padding:8px 11px;margin-bottom:6px;font-size:13px}
+.mini .r{color:var(--accent);font-weight:640;font-variant-numeric:tabular-nums;float:right}
+.mini .c{font-size:11px;color:var(--faint);margin-top:3px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Course Catalog Explorer</h1>
+  <p>Frozen catalog · {{ n_arms }} arms · {{ n_skills }} skills · {{ families|length }} families · {{ dataset_version }}</p>
+</header>
+<nav>
+  <button class="on" data-t="rec">Recommend</button>
+  <button data-t="browse">Browse</button>
+  <button data-t="skills">Skills</button>
+  <button data-t="plan">Study Plans</button>
+  <button data-t="reward">Reward</button>
+  <button data-t="results">Results</button>
+</nav>
+<main>
+
+<section id="rec" class="panel on">
+  <div class="note"><b>Note.</b> Text similarity over the frozen embeddings, sampled from a
+  softmax so every impression carries a logged propensity — a deterministic top-k would make
+  off-policy evaluation impossible later. Thumbs-down reasons refine the next turn and are
+  recorded as JSON to ground the reward spec.
+  <span class="tally" id="tally"></span></div>
+  <div class="controls">
+    <input type="text" id="q" placeholder="Describe what you want to learn…"
+      value="I know Python and want to train neural networks with PyTorch">
+    <select id="rf"><option value="">any family</option>{% for f in families %}<option>{{f}}</option>{% endfor %}</select>
+    <select id="rl"><option value="">any level</option>{% for k,v in levels.items() %}<option value="{{k}}">{{v}}</option>{% endfor %}</select>
+    <button class="go" onclick="rec()">Recommend</button>
+  </div>
+  <div class="agentbar">
+    <label><input type="checkbox" id="agentic" checked> agentic feedback
+      <span style="color:var(--faint)">— the agent decides whether to accept feedback and how to read it; its steps are shown below</span></label>
+    <label style="margin-left:auto"><input type="checkbox" id="useRerank"> LLM re-rank</label>
+  </div>
+  <div class="chips" id="examples"></div>
+  <div class="refine" id="refine" style="display:none"></div>
+  <div id="recOut"><div class="empty">Enter a profile and press Recommend.</div></div>
+</section>
+
+<section id="browse" class="panel">
+  <div class="controls">
+    <select id="bf"><option value="">all families</option>{% for f in families %}<option>{{f}}</option>{% endfor %}</select>
+    <select id="bl"><option value="">all levels</option>{% for k,v in levels.items() %}<option value="{{k}}">{{v}}</option>{% endfor %}</select>
+    <button class="go" onclick="browse()">Apply</button>
+  </div>
+  <div id="browseOut"></div>
+</section>
+
+<section id="skills" class="panel">
+  <div class="note"><b>Difficulty</b> is the mean level of courses teaching the skill
+  (0 = beginner, 2 = advanced), 99% coverage. <b>Weeks</b> is a calendar-span proxy, not
+  learner effort.</div>
+  <div class="controls">
+    <select id="sf" onchange="skills()"><option value="">all families</option>{% for f in families %}<option>{{f}}</option>{% endfor %}</select>
+  </div>
+  <div id="skillsOut"></div>
+</section>
+
+<section id="plan" class="panel">
+  <div class="note">Milestones from a topological sort of the prerequisite graph within each
+  family. Skills sharing a step are genuinely unordered — ties are recorded, not broken.</div>
+  <div class="controls">
+    <select id="pf" onchange="studyPlan()">{% for f in families %}<option>{{f}}</option>{% endfor %}</select>
+  </div>
+  <div id="planOut"></div>
+</section>
+
+<section id="reward" class="panel">
+  <div class="note"><b>Pre-registration tool.</b> Explore weights freely, then <b>freeze</b> a
+  named spec — freezing writes a content hash and refuses to overwrite. Comparing several
+  <i>named, frozen</i> specs is legitimate; mutating one after seeing bandit results is the
+  failure mode the plan warns about. Each weight maps to a thumbs-down reason, so the
+  feedback you collect grounds the numbers.</div>
+  <div id="rwarn"></div>
+  <div class="controls">
+    <input type="text" id="rq" value="I want to learn machine learning with Python">
+    <label style="font-size:13px;color:var(--muted)">learner level
+      <select id="ul"><option value="0">Beginner</option><option value="1">Intermediate</option><option value="2">Advanced</option></select></label>
+    <label style="font-size:13px;color:var(--muted)">hrs/week
+      <input type="text" id="wh" value="5" style="width:56px;min-width:0"></label>
+    <button class="go" onclick="rwPreview()">Apply</button>
+  </div>
+  <div class="sliders" id="sliders"></div>
+  <div class="controls">
+    <input type="text" id="specName" placeholder="name this spec, e.g. grounded-v1" style="min-width:220px">
+    <button class="go" onclick="rwFreeze()">Freeze spec</button>
+    <select id="cmpA"><option value="">draft (current sliders)</option></select>
+    <select id="cmpB"><option value="">draft (current sliders)</option></select>
+    <button class="go" onclick="rwCompare()">Compare A/B</button>
+  </div>
+  <div id="rwOut"></div>
+  <div id="cmpOut"></div>
+</section>
+
+<section id="results" class="panel">
+  <div class="note"><b>What this shows.</b> Three policies on one environment.
+  <code>linucb − baseline</code> isolates the value of <b>learning</b> the reward;
+  <code>planner − linucb</code> isolates the value of <b>planning</b> (same learned
+  model, lookahead added). Each frozen reward bundle is a separate hypothesis, all
+  reported: <code>v1</code> fit only · <code>v2</code> + myopic goal proxy ·
+  <code>v4-terminal</code> sparse payout at episode end (needs delayed credit) ·
+  <code>v5-shaped</code> dense per-step progress (learnable myopically).
+  <br><b>Read Cohen's d, not just the verdict</b> — at thousands of learner-runs a
+  negligible effect still clears its interval.</div>
+  <div id="resultsOut"><div class="empty">Loading…</div></div>
+</section>
+
+</main>
+<script>
+const LV={0:"Beginner",1:"Intermediate",2:"Advanced"};
+const EXAMPLES=[
+ "I have never programmed before and want to learn Python from scratch",
+ "I want to build websites with React, HTML and CSS",
+ "I need SQL and dashboards for business reporting",
+ "network security, cryptography and penetration testing",
+ "deploy containers with Docker and Kubernetes on AWS"];
+
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); document.getElementById(b.dataset.t).classList.add('on');
+  if(b.dataset.t==='browse'&&!window._b){browse();window._b=1}
+  if(b.dataset.t==='skills'&&!window._s){skills();window._s=1}
+  if(b.dataset.t==='plan'&&!window._p){studyPlan();window._p=1}
+  if(b.dataset.t==='reward'&&!window._r){rwInit();window._r=1}
+  if(b.dataset.t==='results'&&!window._res){results();window._res=1}
+});
+document.getElementById('examples').innerHTML=EXAMPLES.map(e=>
+ `<span class="chip" onclick="document.getElementById('q').value=${JSON.stringify(e)};rec()">${e}</span>`).join('');
+
+function card(c,i){
+  const lv=c.level===null?'<span class="tag gap">level unknown</span>'
+    :`<span class="tag">${LV[c.level]}${c.level_imputed?' (inferred)':''}</span>`;
+  const time=c.hours!==null?`<span class="tag grey">${c.hours} h effort</span>`
+    :(c.weeks!==null?`<span class="tag grey">~${c.weeks} wk span</span>`
+    :`<span class="tag gap">no duration</span>`);
+  const rating=c.rating!==null?`<span class="tag grey">★ ${c.rating}</span>`
+    :`<span class="tag gap">no rating</span>`;
+  const votes = i===null ? '' : `
+    <div class="vote">
+      <button class="up" onclick="vote(${i},'up')">&#128077; Useful</button>
+      <button class="down" onclick="vote(${i},'down')">&#128078; Not for me</button>
+      <span class="prop">p=${(c.propensity??0).toFixed(3)} · slot ${c.slot_position}</span>
+    </div>
+    <div class="reason" id="reason${i}">
+      <input type="text" id="rtext${i}" placeholder="Why not? e.g. too advanced, too long, wrong topic"
+        onkeydown="if(event.key==='Enter')sendDown(${i})">
+      <button onclick="sendDown(${i})">Submit &amp; regenerate</button>
+    </div>`;
+  return `<div class="card" id="card${i}">
+    ${c.score!==null?`<span class="score">${c.score.toFixed(3)}</span>`:''}
+    <h3>${c.url?`<a href="${c.url}" target="_blank" rel="noopener">${c.title}</a>`:c.title}</h3>
+    <div class="meta"><span class="tag">${c.family||'—'}</span>${lv}${time}${rating}
+      <span class="tag grey">${c.platform}</span><span>${c.institution||''}</span></div>
+    <p class="desc">${(c.description||'').replace(/</g,'&lt;')}…</p>
+    <div class="skills">${(c.skills||[]).map(s=>`<span class="skill">${s}</span>`).join('')}</div>
+    ${votes}
+  </div>`;
+}
+function render(el,rows){
+  if(el==='recOut') window._cards=rows;
+  document.getElementById(el).innerHTML=rows.length
+    ? rows.map((r,i)=>card(r,el==='recOut'?i:null)).join('')
+    : '<div class="empty">No matches.</div>';
+}
+let S={session_id:null,turn:0,refinements:[],exclude:[],impression:null};
+
+function drawRefine(){
+  const el=document.getElementById('refine');
+  if(!S.refinements.length){el.style.display='none';return}
+  el.style.display='flex';
+  el.innerHTML='<span>Refining on:</span>'+S.refinements.map(r=>`<span class="r">${r}</span>`).join('')
+    +`<span class="clear" onclick="resetSession()">start over</span>`;
+}
+function resetSession(){S={session_id:null,turn:0,refinements:[],exclude:[],impression:null};drawRefine();rec();}
+
+async function tally(){
+  const s=await (await fetch('/api/feedback/summary')).json();
+  if(!s.n_feedback){document.getElementById('tally').textContent='';return}
+  const byr=Object.entries(s.by_reason||{}).map(([k,v])=>`${k} ×${v}`).join(', ');
+  document.getElementById('tally').textContent=
+    `${s.n_feedback} judgments logged${byr?' · '+byr:''}`;
+}
+
+async function rec(){
+  document.getElementById('recOut').innerHTML='<div class="empty">Scoring…</div>';
+  const r=await fetch('/api/recommend',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({q:document.getElementById('q').value,
+      family:document.getElementById('rf').value,
+      level:document.getElementById('rl').value,
+      session_id:S.session_id,turn_index:S.turn,
+      refinements:S.refinements,exclude:S.exclude,
+      rerank:document.getElementById('useRerank').checked})});
+  const d=await r.json();
+  S.session_id=d.session_id; S.impression=d.impression_event_id;
+  render('recOut',d.results||[]);
+  drawRefine(); tally();
+}
+
+function toggleReason(i){document.getElementById('reason'+i).classList.toggle('on');}
+
+async function vote(i,verdict){
+  const c=window._cards[i];
+  const btnUp=document.querySelector(`#card${i} .up`), btnDn=document.querySelector(`#card${i} .down`);
+  if(verdict==='down'){toggleReason(i);btnDn.classList.add('on');return}
+  btnUp.classList.add('on'); btnDn.classList.remove('on');
+  await send(c,'up',null); tally();
+}
+
+async function sendDown(i){
+  if(document.getElementById('agentic').checked) return sendDownAgentic(i);
+  const c=window._cards[i];
+  const txt=document.getElementById('rtext'+i).value.trim();
+  if(!txt){document.getElementById('rtext'+i).focus();return}
+  await send(c,'down',txt);
+  // Hardcoded path: always exclude, always refine, no judgement.
+  S.exclude.push(c.arm_index);
+  S.refinements.push(txt);
+  S.turn+=1;
+  rec();
+}
+
+async function send(c,verdict,reason){
+  const r=await fetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({impression_event_id:S.impression,session_id:S.session_id,
+      arm_index:c.arm_index,slot_position:c.slot_position,propensity:c.propensity,
+      verdict:verdict,reason_text:reason,title:c.title,
+      course_level:c.level,course_hours:c.hours,
+      goal:document.getElementById('q').value,
+      agentic:document.getElementById('agentic').checked})});
+  return await r.json();
+}
+
+function renderAgent(d){
+  if(!d || !d.trace) return '';
+  const A=d.agent||{}, a=A.assessment||{}, i=A.interpretation||{}, act=A.action||{};
+  const route=a.route||'record';
+  const cls=route==='act'?'':(route==='clarify'?'clarify':'record');
+  let h=`<div class="agent"><h4>Agent reasoning — it chose: ${route}</h4>`;
+  for(const t of d.trace){
+    const k=t.node;
+    let body='', kv='';
+    if(k==='assess'){
+      body=t.why||''; kv=`route=${t.route} · confidence=${t.confidence}`
+        +(a.contradicts_history?' · contradicts earlier feedback':'');
+    } else if(k==='interpret'){
+      body=t.belief||''; kv=`category=${t.category}`+(t.changed&&t.changed!=='none'?` · changed: ${t.changed}`:'');
+    } else if(k==='apply'){
+      body='Updated its model of this learner.';
+      kv=JSON.stringify(t.constraints||{})+` · ${t.n_beliefs} beliefs held`;
+    } else if(k==='clarify'){
+      body='Too vague to act on — asking instead of guessing.'; kv=`"${t.question}"`;
+    } else if(k==='record'){
+      body='Logged, but deliberately changed nothing.'; kv=t.why||'';
+    }
+    h+=`<div class="node ${k==='record'?'record':(k==='clarify'?'clarify':'')}">
+        <div class="nm">${k}</div><div class="body">${body}</div>
+        <div class="kv">${kv}</div></div>`;
+  }
+  const lm=A.learner_model||{};
+  if(Object.keys(lm).length){
+    h+=`<div class="node"><div class="nm">learner model now</div>
+        <div class="kv">${JSON.stringify({max_level:lm.max_level,max_hours:lm.max_hours,avoid:lm.avoid_topics})}</div>
+        ${(lm.beliefs||[]).slice(-2).map(b=>`<div class="body">· ${b}</div>`).join('')}</div>`;
+  }
+  h+=`<div class="flow">path: ${d.trace.map(t=>t.node).join(' → ')}</div></div>`;
+  return h;
+}
+
+async function sendDownAgentic(i){
+  const c=window._cards[i];
+  const txt=document.getElementById('rtext'+i).value.trim();
+  if(!txt){document.getElementById('rtext'+i).focus();return}
+  document.getElementById('reason'+i).insertAdjacentHTML('afterend',
+    `<div class="agent" id="ag${i}"><h4>Agent reasoning</h4><div class="body">thinking…</div></div>`);
+  const d=await send(c,'down',txt);
+  const el=document.getElementById('ag'+i);
+  if(el) el.outerHTML=renderAgent(d)||'';
+  tally();
+  const act=(d.agent||{}).action||{};
+  // Only regenerate when the agent decided the feedback should change
+  // behaviour. If it chose to record or clarify, the slate stays put --
+  // that is the agent's call, not a fixed rule.
+  if(act.applied){
+    S.exclude.push(c.arm_index); S.refinements.push(txt); S.turn+=1;
+    setTimeout(rec, 2600);
+  }
+}
+async function browse(){
+  const r=await fetch(`/api/browse?family=${document.getElementById('bf').value}&level=${document.getElementById('bl').value}`);
+  render('browseOut',(await r.json()).results||[]);
+}
+async function skills(){
+  const r=await fetch(`/api/skills?family=${document.getElementById('sf').value}`);
+  const rows=(await r.json()).results||[];
+  document.getElementById('skillsOut').innerHTML=`<table><tr><th>Skill</th><th>Family</th><th>Courses</th><th>Difficulty</th><th>Weeks (proxy)</th></tr>`
+   +rows.map(s=>{const w=s.difficulty===null?0:(s.difficulty/2*90);
+     return `<tr><td>${s.label}</td><td style="color:#7d7168">${s.family}</td><td>${s.courses}</td>
+      <td><span class="bar" style="width:${w}px"></span> ${s.difficulty===null?'—':s.difficulty}</td>
+      <td>${s.weeks===null?'—':s.weeks+' <span style="color:#a1958a">('+Math.round(s.weeks_coverage*100)+'% cov)</span>'}</td></tr>`;}).join('')
+   +`</table>`;
+}
+async function studyPlan(){
+  const r=await fetch(`/api/study-plan?family=${document.getElementById('pf').value}`);
+  const d=await r.json();
+  document.getElementById('planOut').innerHTML=d.steps.map(s=>
+   `<div class="step"><b>STEP ${s.position}${s.tied?' · parallel (unordered)':''}</b>
+    <div class="skills" style="margin-top:8px">${s.skills.map(x=>`<span class="skill">${x}</span>`).join('')}</div></div>`).join('')
+   ||'<div class="empty">No study plan.</div>';
+}
+
+// ---------- reward tuning ----------
+let W={}, RMETA={};
+const RANGE={w_topic:[0,2],w_too_hard:[0,1.5],w_too_easy:[0,1.5],w_time:[0,1],
+             w_quality:[0,1],w_unknown_penalty:[0,0.5]};
+const LABEL={w_topic:"Topic match",w_too_hard:"Too advanced penalty",
+  w_too_easy:"Too basic penalty",w_time:"Over time budget",
+  w_quality:"Rating / quality",w_unknown_penalty:"Missing metadata"};
+
+async function rwInit(){
+  const d=await (await fetch('/api/reward/defaults')).json();
+  RMETA=d; W={...d.defaults};
+  const obs=d.observed_reasons||{};
+  document.getElementById('sliders').innerHTML=Object.keys(W).map(k=>{
+    const reason=d.weight_to_reason[k];
+    const n=reason?(obs[reason]||0):null;
+    const [lo,hi]=RANGE[k];
+    return `<div class="sl">
+      <label>${LABEL[k]}<span class="val" id="v_${k}">${W[k].toFixed(2)}</span></label>
+      <div class="why">${reason?`grounded in <b>${reason}</b> — ${n} observed`:'metadata completeness'}</div>
+      <input type="range" min="${lo}" max="${hi}" step="0.01" value="${W[k]}"
+        oninput="W['${k}']=+this.value;document.getElementById('v_${k}').textContent=(+this.value).toFixed(2);rwWarn()">
+    </div>`;}).join('');
+  const opts='<option value="">draft (current sliders)</option>'+
+    (d.frozen||[]).map(f=>`<option value="${f.name}">${f.name} (${f.hash})</option>`).join('');
+  document.getElementById('cmpA').innerHTML=opts;
+  document.getElementById('cmpB').innerHTML=opts;
+  if(Object.keys(d.suggested||{}).length){
+    document.getElementById('rwarn').innerHTML=
+      `<div class="note">Suggested from your ${Object.values(obs).reduce((a,b)=>a+b,0)} logged
+       thumbs-down reasons: ${Object.entries(d.suggested).map(([k,v])=>`${LABEL[k]} ${v}`).join(' · ')}
+       <span class="clear" onclick="rwApplySuggested()">apply</span></div>`;
+  }
+  rwWarn(); rwPreview();
+}
+function rwApplySuggested(){
+  Object.assign(W,RMETA.suggested||{});
+  Object.keys(W).forEach(k=>{const el=document.querySelector(`input[oninput*="${k}"]`);
+    if(el){el.value=W[k];document.getElementById('v_'+k).textContent=(+W[k]).toFixed(2);}});
+  rwWarn(); rwPreview();
+}
+function rwWarn(){
+  const bad=W.w_too_hard<=W.w_too_easy;
+  document.getElementById('rwarn').innerHTML=bad
+   ?`<div class="warn"><b>Asymmetry violated.</b> "Too advanced" (${W.w_too_hard.toFixed(2)}) must
+     outweigh "too basic" (${W.w_too_easy.toFixed(2)}). A symmetric penalty makes the optimal
+     policy level-neutral and erases the sequencing behaviour the thesis studies. Freezing is blocked.</div>`
+   :document.getElementById('rwarn').innerHTML.startsWith('<div class="warn"')?'':document.getElementById('rwarn').innerHTML;
+}
+async function rwPreview(){
+  const body={...W,q:document.getElementById('rq').value,
+    user_level:+document.getElementById('ul').value,
+    weekly_hours:+document.getElementById('wh').value||5};
+  const d=await (await fetch('/api/reward/preview',{method:'POST',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
+  document.getElementById('cmpOut').innerHTML='';
+  document.getElementById('rwOut').innerHTML=(d.results||[]).map(c=>`<div class="card">
+    <span class="score">${c.reward.toFixed(3)}</span>
+    <h3>${c.rank}. ${c.title}</h3>
+    <div class="meta"><span class="tag">${c.family}</span>
+      ${c.level===null?'<span class="tag gap">level ?</span>':`<span class="tag">${LV[c.level]}</span>`}
+      ${c.hours!==null?`<span class="tag grey">${c.hours} h</span>`:'<span class="tag gap">no duration</span>'}
+      ${c.rating!==null?`<span class="tag grey">★ ${c.rating}</span>`:''}</div>
+    <div class="c" style="font-size:11.5px;color:var(--faint)">
+      topic ${c.components.topic.toFixed(3)} · level ${c.components.level.toFixed(3)}
+      · time ${c.components.time.toFixed(3)} · quality ${c.components.quality.toFixed(3)}
+      · unknown ${c.components.unknown.toFixed(3)}</div>
+  </div>`).join('');
+}
+async function rwFreeze(){
+  const name=document.getElementById('specName').value.trim();
+  if(!name){document.getElementById('specName').focus();return}
+  const r=await fetch('/api/reward/freeze',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({...W,name})});
+  const d=await r.json();
+  document.getElementById('rwarn').innerHTML=d.error
+   ?`<div class="warn">${d.error}</div>`
+   :`<div class="note">Froze <b>${d.spec.name}</b> — hash <code>${d.spec.content_sha256.slice(0,12)}</code>,
+     grounded in ${JSON.stringify(d.spec.grounded_in)}. It can no longer be mutated.</div>`;
+  if(!d.error){document.getElementById('specName').value='';rwInit();}
+}
+async function rwCompare(){
+  const A=document.getElementById('cmpA').value, B=document.getElementById('cmpB').value;
+  const body={q:document.getElementById('rq').value,
+    user_level:+document.getElementById('ul').value,
+    weekly_hours:+document.getElementById('wh').value||5,
+    a:A?{frozen:A}:{...W}, b:B?{frozen:B}:{...W}};
+  const d=await (await fetch('/api/reward/compare',{method:'POST',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
+  const col=s=>`<h4>${d[s].label} · ${d[s].hash}</h4>`+d[s].results.map(c=>
+    `<div class="mini"><span class="r">${c.reward.toFixed(3)}</span>${c.rank}. ${c.title}
+      <div class="c">${c.family} · ${c.level===null?'level ?':LV[c.level]}${c.hours!==null?' · '+c.hours+'h':''}</div></div>`).join('');
+  document.getElementById('rwOut').innerHTML='';
+  document.getElementById('cmpOut').innerHTML=
+    `<div class="note">Top-10 overlap between the two specs: <b>${(d.overlap*100).toFixed(0)}%</b>
+     — low overlap means the weights genuinely change the policy.</div>
+     <div class="cmp"><div>${col('a')}</div><div>${col('b')}</div></div>`;
+}
+
+async function results(){
+  const d=await (await fetch('/api/results')).json();
+  let h='';
+  for(const run of d.runs){
+    const cr=(run.contrasts||[]).filter(c=>c.metric==='reward');
+    const cp=(run.contrasts||[]).filter(c=>c.metric==='progress');
+    const base=run.policies.find(p=>p.policy==='baseline');
+    h+=`<h3 style="margin:18px 0 8px;font-size:15px">Reward bundle <code>${run.prereg}</code>
+        <span style="color:var(--faint);font-weight:400;font-size:13px">
+        · ${run.policies[0].n} learners · horizon ${run.horizon}</span></h3>`;
+    h+=`<table><tr><th>policy</th><th>learns</th><th>plans</th>
+        <th>mean total reward</th><th>mean final goal progress</th></tr>`;
+    for(const p of run.policies){
+      const dr=base?(p.reward-base.reward):0, dp=base?(p.progress-base.progress):0;
+      const d1=p.policy==='baseline'?'':` <span style="color:${dr>0?'var(--accent)':'var(--clay)'}">(${dr>=0?'+':''}${dr.toFixed(3)})</span>`;
+      const d2=p.policy==='baseline'?'':` <span style="color:${dp>0?'var(--accent)':'var(--clay)'}">(${dp>=0?'+':''}${dp.toFixed(3)})</span>`;
+      h+=`<tr><td><code>${p.policy}</code></td><td>${p.learns?'yes':'no'}</td>
+          <td>${p.plans?'yes':'no'}</td>
+          <td>${p.reward.toFixed(3)}${d1}</td>
+          <td>${p.progress.toFixed(4)}${d2}</td></tr>`;
+    }
+    h+='</table>';
+    if(cr.length){
+      h+=`<div style="margin:10px 0 4px;font-size:13px;color:var(--muted)">
+          Paired per-learner contrasts · ${run.seeds} seed(s)</div>
+          <table><tr><th>contrast</th><th>metric</th><th>difference</th>
+          <th>95% CI</th><th>win rate</th><th>Cohen's d</th><th>verdict</th></tr>`;
+      for(const c of cr.concat(cp)){
+        const col=c.sig?'var(--accent)':'var(--clay)';
+        const practical=Math.abs(c.d)<0.2?' <span style="color:var(--faint)">(negligible)</span>':'';
+        h+=`<tr><td>${c.contrast}</td><td>${c.metric}</td>
+            <td>${c.mean>=0?'+':''}${c.mean.toFixed(4)}</td>
+            <td>±${c.ci95.toFixed(4)}</td><td>${(c.win*100).toFixed(0)}%</td>
+            <td>${c.d>=0?'+':''}${c.d.toFixed(3)}${practical}</td>
+            <td style="color:${col}">${c.sig?'established':'not established'}</td></tr>`;
+      }
+      h+='</table>';
+    }
+  }
+  h+=`<h3 style="margin:24px 0 8px;font-size:15px">What the bandit recovered on its own</h3>
+      <div class="note">LinUCB never saw the reward spec. It estimated these weights from
+      observed rewards alone — including the <b>asymmetry</b> between being pushed too hard
+      and being bored.</div>
+      <table><tr><th>feature</th><th>learned θ</th><th>frozen truth (poc-v2)</th><th>error</th></tr>`;
+  for(const t of d.theta){
+    const err=Math.abs(t.learned-t.true_v2);
+    h+=`<tr><td><code>${t.feature}</code></td><td>${t.learned>=0?'+':''}${t.learned.toFixed(3)}</td>
+        <td>${t.true_v2>=0?'+':''}${t.true_v2.toFixed(2)}</td>
+        <td style="color:${err<0.1?'var(--accent)':'var(--clay)'}">${err.toFixed(3)}</td></tr>`;
+  }
+  h+='</table>';
+  h+=`<h3 style="margin:24px 0 8px;font-size:15px">Frozen reward bundles</h3>`;
+  for(const b of d.bundles){
+    h+=`<div class="card"><h3><code>${b.name}</code>
+        <span style="color:var(--faint);font-weight:400;font-size:12px">${b.hash} · ${b.frozen_at}</span></h3>
+        <div class="skills">`+Object.entries(b.weights).map(([k,v])=>
+          `<span class="skill">${k} = ${v}</span>`).join('')+`</div></div>`;
+  }
+  document.getElementById('resultsOut').innerHTML=h;
+}
+rec();
+</script>
+</body></html>

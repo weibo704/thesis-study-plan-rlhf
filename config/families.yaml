@@ -1,0 +1,173 @@
+# Tier-1 skill families. Authored by hand (plan section 3a): labels the
+# thesis owns and defends, not an emergent artifact.
+#
+# SCOPE REVISION 2026-09-27: the item space is data science + computer
+# science / software development, NOT specifically AI. The original 12
+# families were drawn for an AI/software-dev catalog and had no home for
+# security, mobile or systems courses, which left ~55 legitimate CS courses
+# classified out. Three families added below; the count is now 15. Each family carries a
+# scope note plus boundary examples, reprinted in the thesis appendix.
+#
+# keywords_include / keywords_exclude drive the first-pass scope filter in
+# stage 8. They are deliberately generous; the embedding classifier handles
+# the ambiguous band. NOTE: there is no global stoplist -- over-broad labels
+# are handled by the breadth test in stage 3e, never by a keyword blocklist.
+
+families:
+  - id: programming-foundations
+    label: Programming Foundations
+    scope: >-
+      General-purpose programming language mechanics, data structures,
+      algorithms and problem decomposition, independent of application area.
+    in_examples: [python basics, data structures, recursion, object oriented programming]
+    out_examples: [using pandas for analysis, training a neural network]
+    keywords_include: [programming, python, java, javascript, "c++", algorithm, data structure,
+      recursion, object oriented, coding, ruby, rails, php, swift, kotlin, golang, rust, scala,
+      perl, matlab, c sharp, dotnet, ".net", typescript, bash, shell scripting, scripting,
+      functional programming, compiler, interpreter]
+
+  - id: software-engineering
+    label: Software Engineering
+    scope: >-
+      Practices for building and maintaining software as a team: testing,
+      version control, design patterns, refactoring, code review, architecture.
+    in_examples: [unit testing, git branching, design patterns, clean code]
+    out_examples: [deploying a model to production, css layout]
+    keywords_include: [software engineering, testing, unit test, git, version control, design pattern,
+      refactor, agile, code review, debugging, software architecture, software design,
+      software development, software requirements, requirements engineering, software process,
+      uml, scrum, continuous integration, pair programming, technical debt]
+
+  - id: web-frontend
+    label: Web Frontend
+    scope: >-
+      Client-side web development: markup, styling, browser runtime,
+      component frameworks and frontend build tooling.
+    in_examples: [react components, css grid, responsive design, typescript for the browser]
+    out_examples: [rest api design, sql joins]
+    keywords_include: [html, css, react, angular, vue, frontend, front-end, responsive, dom, web design, bootstrap, tailwind]
+
+  - id: web-backend-apis
+    label: Web Backend and APIs
+    scope: >-
+      Server-side application development: HTTP services, REST and GraphQL
+      APIs, authentication, server frameworks.
+    in_examples: [rest api design, django views, express routing, oauth flows]
+    out_examples: [react hooks, kubernetes autoscaling]
+    keywords_include: [rest, api, backend, back-end, django, flask, express, node.js, spring boot, microservice, graphql, authentication]
+
+  - id: databases
+    label: Databases and Data Modeling
+    scope: >-
+      Storing and querying structured data: relational modeling, SQL, NoSQL
+      stores, indexing and transactions.
+    in_examples: [sql joins, schema normalization, mongodb queries, indexing]
+    out_examples: [pandas dataframes, spark streaming jobs]
+    keywords_include: [sql, database, postgresql, mysql, mongodb, nosql, relational, query, schema, data modeling, indexing]
+
+  - id: data-analysis-viz
+    label: Data Analysis and Visualization
+    scope: >-
+      Exploratory analysis, descriptive statistics, dataframe manipulation
+      and communicating findings visually.
+    in_examples: [pandas, exploratory data analysis, matplotlib, dashboards, a/b test readout]
+    out_examples: [training a cnn, database indexing]
+    keywords_include: [data analysis, pandas, numpy, excel, tableau, power bi, visualization, dashboard, exploratory, statistics, r programming]
+
+  - id: math-for-ml
+    label: Mathematics for Machine Learning
+    scope: >-
+      Mathematical prerequisites for learning algorithms: linear algebra,
+      probability, calculus and optimization.
+    in_examples: [linear algebra, probability distributions, gradient descent math, convex optimization]
+    out_examples: [scikit-learn pipelines, prompt engineering]
+    keywords_include: [linear algebra, calculus, probability, statistics for machine learning, optimization, bayesian, matrix, vector, gradient]
+
+  - id: classical-ml
+    label: Classical Machine Learning
+    scope: >-
+      Non-deep supervised and unsupervised learning: regression, trees,
+      ensembles, clustering, feature engineering and model evaluation.
+    in_examples: [random forest, logistic regression, cross validation, feature engineering, clustering]
+    out_examples: [transformer architecture, docker packaging]
+    keywords_include: [machine learning, regression, classification, clustering, random forest, svm, feature engineering, cross validation, scikit-learn, supervised, unsupervised]
+
+  - id: deep-learning
+    label: Deep Learning
+    scope: >-
+      Neural network architectures and training: backpropagation, CNNs, RNNs,
+      transformers, and the frameworks used to build them.
+    in_examples: [convolutional networks, pytorch training loop, backpropagation, transfer learning]
+    out_examples: [linear regression, sql window functions]
+    keywords_include: [deep learning, neural network, tensorflow, pytorch, keras, cnn, rnn, lstm, transformer, backpropagation, gan]
+
+  - id: nlp-and-llm
+    label: Natural Language Processing and LLMs
+    scope: >-
+      Processing and generating text: tokenization, embeddings, sequence
+      models, large language models and retrieval-augmented systems.
+    in_examples: [text classification, word embeddings, prompt engineering, rag pipelines, named entity recognition]
+    out_examples: [image segmentation, ci/cd pipelines]
+    keywords_include: [natural language processing, nlp, text mining, sentiment analysis, language model, llm, gpt, chatbot, embeddings, tokenization, prompt]
+
+  - id: computer-vision
+    label: Computer Vision
+    scope: >-
+      Extracting information from images and video: classification,
+      detection, segmentation and image processing.
+    in_examples: [image classification, object detection, opencv, segmentation]
+    out_examples: [text summarization, rest api design]
+    keywords_include: [computer vision, image processing, opencv, object detection, image classification, segmentation, face recognition]
+
+  - id: mlops-deployment
+    label: MLOps and Deployment
+    scope: >-
+      Operating software and models in production: containers, cloud
+      services, CI/CD, model serving, monitoring and data pipelines.
+    in_examples: [docker, kubernetes, model serving, ci/cd, experiment tracking, feature stores]
+    out_examples: [linear algebra, css animations]
+    keywords_include: [mlops, devops, docker, kubernetes, aws, azure, gcp, cloud, deployment, ci/cd, pipeline, airflow, spark, monitoring, model serving]
+
+  - id: security
+    label: Security
+    scope: >-
+      Protecting systems and data: cryptography, network and application
+      security, threat modelling, and offensive and defensive practice.
+    in_examples: [penetration testing, cryptography, network security, threat modeling]
+    out_examples: [cyber policy and international conflict, homeland security strategy]
+    keywords_include: [cybersecurity, cyber security, information security, network security,
+      cryptography, encryption, hashing, penetration testing, ethical hacking, malware,
+      vulnerability, exploit, firewall, intrusion detection, security operations, ddos]
+
+  - id: mobile-development
+    label: Mobile Development
+    scope: >-
+      Building applications for phones and tablets, native or cross-platform,
+      including mobile-specific UI and device APIs.
+    in_examples: [android development, ios development, react native, flutter]
+    out_examples: [mobile marketing strategy, responsive web design]
+    keywords_include: [android, ios development, ios app, mobile app, mobile development,
+      react native, flutter, swiftui, android studio, xcode, mobile programming]
+
+  - id: computer-systems
+    label: Computer Systems
+    scope: >-
+      How machines run software: operating systems, computer architecture,
+      networking, concurrency, and embedded or real-time systems.
+    in_examples: [operating systems, computer networks, concurrency, embedded systems]
+    out_examples: [systems thinking for managers, organisational operations]
+    keywords_include: [operating system, computer architecture, assembly language, kernel,
+      concurrency, parallel computing, distributed system, computer network, tcp/ip,
+      network protocol, embedded system, internet of things, arduino, raspberry pi,
+      real-time system, compiler design, memory management, virtualization]
+
+# Scope filter: a course is a scope candidate if it matches any family
+# keyword. These global terms mark clearly out-of-scope subject matter and
+# are used only to demote, never to drop a course that also matches a family.
+out_of_scope_hints:
+  - [music, instrument, guitar, piano, songwriting]
+  - [nursing, clinical, patient care, anatomy, pharmacology]
+  - [screenwriting, film production, drama, creative writing]
+  - [accounting, taxation, auditing, bookkeeping]
+  - [yoga, nutrition, fitness, mindfulness]
+  - [language learning, spanish, french, mandarin, grammar]

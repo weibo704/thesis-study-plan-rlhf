@@ -1,0 +1,61 @@
+profile,rank,arm_index,score,title,family
+absolute_beginner_python,1,1493,0.8623,Python Programming Essentials,programming-foundations
+absolute_beginner_python,2,1462,0.8461,Programming for Everybody (Getting Started with Python),programming-foundations
+absolute_beginner_python,3,1131,0.8302,Learn to Program: The Fundamentals,programming-foundations
+absolute_beginner_python,4,1494,0.8218,Python Programming: A Concise Introduction,programming-foundations
+absolute_beginner_python,5,1469,0.8193,Crash Course on Python,programming-foundations
+absolute_beginner_python,6,1486,0.8175,"Concepts in Python: Loops, Functions and Returns",programming-foundations
+absolute_beginner_python,7,727,0.8082,Create Your First Python Program,programming-foundations
+absolute_beginner_python,8,1466,0.7966,Python Basics,programming-foundations
+absolute_beginner_python,9,967,0.7838,An Introduction to Interactive Programming in Python (Part 1),programming-foundations
+absolute_beginner_python,10,1055,0.7687,Introduction to Python,programming-foundations
+ml_engineer_deep_learning,1,566,0.7142,Deep Neural Networks with PyTorch,deep-learning
+ml_engineer_deep_learning,2,1008,0.7135,Introduction to TensorFlow,deep-learning
+ml_engineer_deep_learning,3,1820,0.6936,Tweet Emotion Recognition with TensorFlow,deep-learning
+ml_engineer_deep_learning,4,1784,0.6867,TensorFlow for AI: Neural Network Representation,deep-learning
+ml_engineer_deep_learning,5,1812,0.6856,Traffic Sign Classification Using Deep Learning in Python/Keras,deep-learning
+ml_engineer_deep_learning,6,399,0.681,Convolutional Neural Networks in TensorFlow,deep-learning
+ml_engineer_deep_learning,7,260,0.6723,Building Deep Learning Models with TensorFlow,deep-learning
+ml_engineer_deep_learning,8,1035,0.672,"Introduction to TensorFlow for Artificial Intelligence, Machine Learning, and Deep Learning",deep-learning
+ml_engineer_deep_learning,9,1307,0.665,Neural Network from Scratch in TensorFlow,deep-learning
+ml_engineer_deep_learning,10,1783,0.663,TensorFlow for AI: Get to Know Tensorflow,deep-learning
+frontend_web_developer,1,1886,0.8224,"Responsive Website Basics: Code with HTML, CSS, and JavaScript",web-frontend
+frontend_web_developer,2,1555,0.8176,Responsive Web Design,web-frontend
+frontend_web_developer,3,746,0.8148,Front-End Web Development with React,web-frontend
+frontend_web_developer,4,880,0.8123,"HTML, CSS, and Javascript for Web Developers",web-frontend
+frontend_web_developer,5,217,0.7978,Front-End Web UI Frameworks and Tools: Bootstrap 4,web-frontend
+frontend_web_developer,6,1557,0.76,Responsive Website Tutorial and Examples,web-frontend
+frontend_web_developer,7,1558,0.7564,Advanced Styling with Responsive Design,web-frontend
+frontend_web_developer,8,1882,0.7356,Web Design: Wireframes to Prototypes,web-frontend
+frontend_web_developer,9,243,0.7329,Build Your First React Website,web-frontend
+frontend_web_developer,10,1560,0.7303,Quick resumeCreator with JavaScript,programming-foundations
+data_analyst_sql,1,73,0.7602,Managing Big Data with MySQL,databases
+data_analyst_sql,2,635,0.75,Relational Database Support for Data Warehouses,databases
+data_analyst_sql,3,548,0.7321,Database Management Essentials,databases
+data_analyst_sql,4,223,0.7133,Build a Database from a Relational Model,databases
+data_analyst_sql,5,437,0.7101,Create Relational Database Tables Using SQLiteStudio,databases
+data_analyst_sql,6,1690,0.6976,Databases and SQL for Data Science,databases
+data_analyst_sql,7,1197,0.6951,Manipulating Data with SQL,databases
+data_analyst_sql,8,451,0.6903,Creating Database Tables with SQL,databases
+data_analyst_sql,9,1057,0.6872,Introduction to Relational Database and SQL,databases
+data_analyst_sql,10,1642,0.6866,Retrieve Data using Single-Table SQL Queries,databases
+security_engineer,1,581,0.8346,Design and Analyze Secure Networked Systems,security
+security_engineer,2,1298,0.8226,Network Security & Database Vulnerabilities,databases
+security_engineer,3,1526,0.8191,Real-Time Cyber Threat Detection and Mitigation,security
+security_engineer,4,482,0.8127,Cyber Attack Countermeasures,security
+security_engineer,5,1605,0.8029,Secure Networked System with Firewall and IDS,security
+security_engineer,6,908,0.802,Identifying Security Vulnerabilities,security
+security_engineer,7,906,0.7961,"Penetration Testing, Incident Response and Forensics",programming-foundations
+security_engineer,8,304,0.7953,Check Point Jump Start: Network Security,security
+security_engineer,9,1430,0.7887,Proactive Computer Security,security
+security_engineer,10,1089,0.7788,IT Security: Defense against the digital dark arts,security
+devops_cloud,1,391,0.8651,Building Containerized Applications on AWS,mlops-deployment
+devops_cloud,2,898,0.7207,"Introduction to Containers w/ Docker, Kubernetes & OpenShift",mlops-deployment
+devops_cloud,3,262,0.6948,Building Modern Java Applications on AWS,mlops-deployment
+devops_cloud,4,263,0.6579,Building Modern Python Applications on AWS,mlops-deployment
+devops_cloud,5,390,0.6573,Containerize a full-stack NodeJS application in Docker,mlops-deployment
+devops_cloud,6,1318,0.6399,AWS Elastic Beanstalk: Build & Deploy a Node.js RESTful API,web-backend-apis
+devops_cloud,7,832,0.6357,Building Scalable Java Microservices with Spring Boot and Spring Cloud,programming-foundations
+devops_cloud,8,425,0.6261,Create Docker Container with Flask Seaborn Regression Plot App,web-backend-apis
+devops_cloud,9,886,0.6205,Hybrid Cloud Multi-Cluster with Anthos,mlops-deployment
+devops_cloud,10,321,0.6181,Cloud Applications,mlops-deployment

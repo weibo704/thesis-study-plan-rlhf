@@ -1,0 +1,113 @@
+# Provisional matching thresholds.
+#
+# PROVISIONAL: plan section 3d requires these be calibrated on this corpus by
+# hand-labelling ~200 sampled pairs and choosing cut-points that leave roughly
+# 10-15% of candidate pairs in the review band. The values below are starting
+# points chosen to be conservative (they over-refer to review rather than
+# auto-merging), NOT imported from any other corpus as tuned constants.
+# Run `python -m pipeline.stage05_dedup --report-bands` to see the current
+# distribution before changing them.
+
+dedup:
+  # Candidate generation
+  tfidf_analyzer: char_wb
+  tfidf_ngram_min: 3
+  tfidf_ngram_max: 4
+  neighbours_per_row: 10
+  min_cosine_candidate: 0.55   # below this, not even considered a pair
+
+  # Three-band cascade
+  auto_merge:
+    min_cosine: 0.92
+    min_token_set_ratio: 92
+  review:
+    min_cosine: 0.78
+    min_token_set_ratio: 82
+  # anything failing the review band is auto-rejected
+
+  # An exact match on these is decisive regardless of the scores above.
+  decisive_keys: [url_slug]
+
+merge:
+  # Donor join (coursera2025 -> coursera2021 spine)
+  require_institution_match: true
+  fields_donated:
+    - duration_lower_bound
+    - duration_upper_bound
+    - calendar_weeks_lo
+    - calendar_weeks_hi
+    - duration_unit_original
+    - duration_source
+    - duration_is_imputed
+    - effort_hours_total
+    - content_granularity
+    - rating_count
+    - subject_raw
+    - level_canonical
+    - level_source
+    - level_is_imputed
+    - level_raw
+
+scope:
+  # Field weights for keyword evidence. A family term in the title is much
+  # stronger evidence than the same term buried in a description, where it
+  # often appears as a passing mention ("no programming required").
+  weight_title: 3.0
+  weight_skills: 2.0
+  weight_description: 1.0
+  # CALIBRATED against the real catalog (4,312 canonical rows), not guessed.
+  # Keyword score is bimodal: 0 for 2,137 rows (clear out), >=4 for 1,066
+  # (a title hit or two skill hits), with 911 in between forming a natural
+  # review band. TF-IDF similarity turned out to be a weak signal -- median
+  # 0.021, 90th percentile 0.10 -- because family profile docs are short
+  # relative to course blobs. An earlier version required sim >= 0.10 to
+  # corroborate keywords, i.e. demanded top-decile similarity from every
+  # course, which pushed obvious matches like "JavaScript Introduction"
+  # (keyword 5.0) into the ambiguous band. Similarity now only promotes or
+  # rescues; it can no longer veto keyword evidence.
+  min_keyword_score: 4.0            # 24.7% of rows -- confident on keywords alone
+  min_similarity_alone: 0.15        # 4.0% -- rescues text matches with no keyword
+  min_similarity_supporting: 0.05   # 23.0% -- promotes a weak keyword hit
+  promote_keyword_score: 2.0        # paired with min_similarity_supporting
+  ambiguous_keyword_score: 1.0
+  ambiguous_similarity: 0.03
+  # Out-of-scope subject hints demote only when family evidence is weak.
+  out_hint_veto_ratio: 1.5
+
+taxonomy:
+  # Stage 6 merge cascade. PROVISIONAL until calibrated against hand-labelled
+  # pairs; the adjudicate band is deliberately wide so the LLM sees the hard
+  # cases rather than auto-merging them.
+  min_support_for_merge: 2       # a phrase on one course cannot anchor a leaf
+  neighbours: 8                  # embedding k-NN blocking
+  min_cosine_candidate: 0.55
+  auto_merge_cosine: 0.93
+  auto_merge_tsr: 88
+  # CALIBRATED: top-1 neighbour cosine peaks at 0.963 with a 95th percentile
+  # of 0.849, so an auto_merge floor of 0.93 fired only 3 times. The
+  # 0.72-0.78 band holds genuine merges ("internet security" / "cyber
+  # security", "Markov Model" / "markov chain") alongside genuine
+  # distinctions ("Android Development" / "iOS Development"), so it belongs
+  # in adjudication rather than auto-reject.
+  adjudicate_cosine: 0.72
+  # Prune (plan 3e)
+  min_support: 4                 # a leaf needs >=4 courses to be learnable
+  max_breadth: 0.66              # family-entropy ceiling; above this it is a
+                                 # generic term, not a skill. Tightened from
+                                 # 0.72, which let "ordered pair" through at
+                                 # 0.696 -- source-tag noise spread over 61
+                                 # unrelated courses.
+  # Label-vs-family-profile cosine. Calibrated on the kept-leaf
+  # distribution: median 0.391, and everything below ~0.25 is junk
+  # ("persona", "market segmentation", "public health"). A flat floor would
+  # also drop real skills whose names are short proper nouns, so a weaker
+  # fit is accepted when the courses carrying the skill agree on the family.
+  min_family_fit_alone: 0.30
+  min_family_fit_corroborated: 0.20
+  max_leaves_per_family: 14      # 15 families x 14 -> ~150 leaf target
+  # Freeze (plan 3f)
+  min_tag_course_similarity: 0.18   # leaf label vs course text
+
+prereqs:
+  min_cooccurrence: 4      # skills must share >=4 courses to infer an order
+  min_level_delta: 0.35    # mean level_canonical gap, on a 0-2 ordinal scale
