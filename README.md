@@ -1,34 +1,86 @@
-# Course Catalog Ingestion Pipeline
+# Learning to Rank LLM-Generated Study Plans from Human Feedback
 
-Item-space construction for a thesis comparing a **content-based baseline
-recommender** against a **contextual bandit layer** stacked on it, for
-self-paced learners. Item space: **data science + computer science /
-software development**.
+Master's thesis project, Northeastern University. Large language models write
+plausible study plans but rank their own output poorly. This asks whether a
+reward model trained on pairwise human preferences can select better plans than
+the model's own ordering — in a recommendation setting rather than a
+conversational one.
 
-Full design and rationale: [`docs/ingestion-plan.md`](docs/ingestion-plan.md).
+**Thesis draft:** [`docs/thesis-draft.md`](docs/thesis-draft.md) ·
+**architecture figure:** [`docs/stage1-flow.svg`](docs/stage1-flow.svg)
 
-## Why this exists
+## The result
 
-The catalog is not preprocessing. It fixes the arm set, the item feature
-vectors, the difficulty signal the reward model depends on, and the study plan
-structure that makes multi-step recommendation meaningful. Decisions that
-look cosmetic here (how a duration bucket is stored, whether a missing
-difficulty is imputed) propagate directly into reward modelling.
+A generator writes six candidate plans from a 25-course retrieved shortlist; a
+Bradley–Terry reward model fitted on noisy pairwise preferences selects among
+them. On held-out learners, against a reward function frozen and content-hashed
+before any run:
 
-## Namespaces
+| Contrast | Difference | 95% CI | Verdict |
+|---|---|---|---|
+| Feedback RL over the raw LLM | **+0.1136** | ±0.0745 | established |
+| Scoring over sampling | +0.3075 | ±0.0995 | established |
+| More candidates alone, no scoring | −0.1940 | ±0.1001 | established |
 
-A one-way dependency, enforced at build time. This is the central
-anti-circularity device:
+That third row is the control that gives the first its meaning: generating more
+candidates and picking randomly is *worse* than taking the first plan, so the
+gain comes from the scoring rather than from having more options.
+
+Decomposing the pipeline — retrieval contributes +1.9828, generation +0.3707,
+and the language model's own ranking leaves **+0.2872 unclaimed**. That gap is
+what the reward model recovers.
+
+Two findings of independent interest. The preference-trained model slightly
+*outperformed* one regressed directly on the true reward (0.7121 vs 0.6819), so
+learning from noisy comparisons cost nothing against learning from the answer
+key. And it recovered a **4.6:1** asymmetry between over- and under-challenging
+a learner without ever observing a reward value, against 3:1 in the frozen spec.
+
+## What is here
 
 ```
-data/catalog/   frozen facts from the sources          (read by everything)
-data/world/     oracle: skill DAG, user state, reward  (never read by the agent)
-data/agent/     arm index, feature matrices            (must not derive from world/)
+pipeline/   11 build stages: catalog -> 188-skill taxonomy -> 254-edge
+            prerequisite graph -> 500-learner simulator -> frozen reward ->
+            bandit/planner baselines -> best-of-N experiment
+app/        the study participants use (pairwise plan comparison), a LangGraph
+            feedback agent, online reward updating, and an inspector that shows
+            how each recorded preference reshapes the recommendation
+infra/      AWS CDK: App Runner + DynamoDB + Secrets Manager
+docs/       thesis draft, figures, and the builders that produce them
+reports/    every number in the thesis, regenerable from the pipeline
+tests/      194 tests
 ```
 
-If prerequisite edges ever reach `agent/` features while the reward credits
-prerequisite satisfaction, the bandit wins by construction and the headline
-result becomes meaningless.
+## Two disciplines the results depend on
+
+**Pre-registration.** The reward function, taxonomy and prerequisite graph are
+frozen and content-hashed as one bundle before any policy runs. Tuning the
+ground truth after seeing a result would invalidate the study, and the hash
+makes that impossible to do quietly.
+
+**The world/agent firewall.** No component that produces a recommendation may
+read the prerequisite graph, the reward specification, or a learner's hidden
+state — enforced by a build assertion that tracks real file reads. Its cost was
+measured rather than assumed: a feature exposing the oracle graph learned a
+weight of −0.011, indistinguishable from zero.
+
+## Not in this repository
+
+Excluded deliberately, and the pipeline rebuilds them:
+
+| Path | Why |
+|---|---|
+| `.env` | API key. Copy `.env.example` and fill it in. |
+| `data/catalog/llm_cache/` | 10,329 files, 249 MB. Embeds course descriptions from a source whose licence is "Unknown" and which `config/sources.yaml` marks `redistributable: false`. |
+| `data/catalog/*.parquet`, `data/raw/`, `data/staging/` | Same source text. Rebuild with stages 1–11. |
+| `data/agent/feedback/` | Participant data. |
+
+Derived artifacts — audit CSVs with course titles and scores, skill
+assignments, hashes — are included, which is what the ingestion plan specified
+shipping in place of raw scraped text.
+
+Because the cache is excluded, a fresh clone needs API access to rebuild. With
+the cache present the whole pipeline replays offline with zero API calls.
 
 ## Setup
 
