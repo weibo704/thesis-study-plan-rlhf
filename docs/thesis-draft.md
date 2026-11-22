@@ -8,8 +8,6 @@
 
 # Dedication
 
-> Replace with your dedication, or delete this page entirely.
-
 To those who kept asking what I was building, and listened to the answer.
 
 # List of Acronyms
@@ -35,17 +33,13 @@ To those who kept asking what I was building, and listened to the answer.
 
 # Acknowledgments
 
-> **What this page is for.** A short personal note thanking the people who made
-> the work possible — not a technical section, and not graded. Convention at
-> Northeastern is one paragraph for your advisor (what they specifically did:
-> pushed back on an idea, gave you room, read drafts), then one for family or
-> friends. The sample thesis runs about 200 words. Write it last; it is the
-> only page in the thesis where you are not making an argument.
+I thank my advisor, Prof. Xuemin Jin, for his guidance throughout this work.
+
+*[One paragraph on your advisor, naming what he specifically did; one on
+family. About 200 words. This is the only page in the thesis where you are
+not making an argument — replace this placeholder before submission.]*
 
 # Abstract of the Thesis
-
-> Draft. Rewrite in your own voice once Chapter 4 settles. Keep it under 350
-> words, and make sure every number appearing here appears again in Chapter 4.
 
 Large language models readily produce plausible study plans, but rank their own
 output poorly. This thesis asks whether a reward model trained on human
@@ -135,10 +129,16 @@ of the model, or the size of the evaluation (§4.6)?
 **Scope.** The item space is computer science, data science and software
 development. The taxonomy and prerequisite graph are scaffolding for the
 evaluation, not contributions in their own right; neither is validated against a
-real curriculum or a domain expert. The evaluation is conducted in simulation. A
-live deployment collects real preferences, but at the scale reported that
-component demonstrates mechanism rather than supplying statistical evidence.
-Chapter 5 states this plainly.
+real curriculum or a domain expert.
+
+**Every result in Chapter 4 rests on simulated preferences.** A live deployment
+collects real ones, and 52 comparisons from 6 participants had been gathered at
+the time of writing, but no reported contrast depends on them. They appear in
+§5.6 as evidence bearing on the simulator's external validity — where they
+partly disagree with it — rather than as a finding. §3.11 sets out which
+experiment uses which population, and this distinction is drawn early because
+the thesis is about learning from preferences and a reader is entitled to know
+which preferences produced the headline number.
 
 **Organization.** Chapter 2 situates the work in prior literature. Chapter 3
 presents the methodology: catalog construction, reward specification,
@@ -147,12 +147,6 @@ deployed system. Chapter 4 reports results. Chapter 5 discusses them and states
 the limitations. Chapter 6 concludes.
 
 # 2 Literature Review
-
-> **This chapter is yours to write.** The structure below is matched to what the
-> rest of the thesis actually uses, so none of the scaffolding is wasted. **No
-> citations have been inserted.** Fabricated references are worse than missing
-> ones, so each section names the ideas and leaves the sourcing to you. The
-> sample thesis runs about four pages here; eight to twelve is typical.
 
 ## 2.1 Course and Learning-Path Recommendation
 
@@ -185,39 +179,134 @@ and Pan et al. [14] show that prerequisite relations between concepts can be
 learned from MOOC course material itself rather than supplied by an expert — the
 same premise the prerequisite graph of §3.3 rests on.
 
-> **Read these four before you defend them.** The paragraphs above are written
-> from verified abstracts and metadata, not from full readings. The claims are
-> safe at this level of generality, but a committee may ask for specifics —
-> which methods dominate, what evaluation measures the surveys report — and
-> those you should take from the papers themselves. This is also where to add
-> the five to fifteen further references that place your work against named
-> systems rather than against surveys.
+This section characterises the field at the level of its surveys. A fuller
+treatment would compare named systems directly; the surveys are cited here
+because the purpose is to locate this work rather than to adjudicate between
+existing recommenders.
 
 ## 2.2 Contextual Bandits for Recommendation
 
-LinUCB [8] and the linear-payoff family; the exploration–exploitation trade-off in
-recommendation; why propensity logging matters and what breaks without it. This
-section supports the baseline family in §4.7.
+A recommender that learns from its own output faces a problem a supervised
+model does not: it only observes the outcome of the item it chose. Li et al.
+[8] formalised news-article recommendation as a contextual bandit, in which a
+policy sees a context, selects an arm, and observes a reward for that arm
+alone. Their LinUCB algorithm assumes the expected reward is linear in the
+context–arm features and selects the arm maximising an upper confidence bound,
+so that uncertainty itself attracts exploration. The appeal for recommendation
+is that exploration is directed rather than random: an arm is tried because
+little is known about it, not because a coin came up heads.
+
+Two properties carry into this thesis. First, the linear-payoff assumption
+makes the learned weights inspectable, which matters when the question is what
+a model learned rather than only how well it scored. Second, Li et al. showed
+that a policy can be evaluated offline on logged data provided the logging
+policy was stochastic and its action probabilities were recorded. A
+deterministic policy logs probabilities of zero and one, and any later
+importance-weighted estimate divides by zero or discards the record. That
+constraint is why the deployed system of §3.10 samples its slates from a
+softmax and stores the probability with which each was chosen.
+
+The LinUCB baseline in §4.7 is included for a specific purpose: it establishes
+that *learning* helps at all in this item space, separately from the question
+of whether preference-based selection helps. Its margin over the fixed-weight
+scorer (+0.2042, Cohen's *d* = 0.93) is the largest effect in the thesis, and
+it sets the bar the later contrasts are read against.
 
 ## 2.3 Reinforcement Learning from Human Feedback
 
-The Bradley–Terry model for paired comparisons; preference-based reward
-modelling [2]–[4]; best-of-N as inference-time selection [5]; the distinction between
-learning a reward and learning a policy. This is the core method and warrants the
-most space.
+**From comparisons to a scale.** Bradley and Terry [1] addressed a problem in
+experimental design: given only judgements of which of two items is preferred,
+recover a scale on which the items can be ranked. Their model assigns each item
+a latent quality and makes the probability of one beating another a logistic
+function of the difference between them. The model is old, but its assumption —
+that people compare more reliably than they rate — is what makes it useful
+wherever absolute judgements are not comparable across judges.
+
+**From a scale to a reward.** Christiano et al. [2] applied this to
+reinforcement learning, showing that an agent could be trained against a reward
+model fitted to human comparisons of short trajectory segments, without the
+reward ever being specified. The significant result was efficiency: comparisons
+on a small fraction of the agent's interaction were enough to learn behaviours
+that would have been difficult to write a reward function for. Stiennon et al.
+[3] carried the method to language, fitting a reward model to human comparisons
+of summaries and optimising against it; Ouyang et al. [4] generalised this to
+instruction following, in the training procedure now widely referred to as
+RLHF.
+
+**Learning a reward against learning a policy.** These works share a structure
+worth separating. A reward model is learned from preferences, and then a policy
+is optimised against that reward model, usually by a policy-gradient method.
+The two halves are separable, and only the first is used here. This thesis
+learns a reward model from preferences and applies it at inference time; no
+policy is updated and no generator is fine-tuned. The generator in §3.7 is the
+same model throughout, and what changes between conditions is only which of its
+outputs is selected.
+
+**Best-of-N as the selection rule.** Cobbe et al. [5] took that second route
+explicitly: rather than optimising a model against a verifier, they sampled
+many candidate solutions and returned the one the verifier ranked highest. On
+grade-school mathematics this outperformed fine-tuning, and it scaled better
+with additional data. Best-of-N is attractive because it is cheap, leaves the
+generator untouched, and makes the contribution of the scorer directly
+measurable — the same candidates can be re-ranked by any rule. The difference
+in setting is that Cobbe et al. could in principle check a verifier against
+ground truth, because arithmetic has a right answer. A study plan does not,
+which is what makes a preference-trained scorer the appropriate instrument
+rather than a convenience.
 
 ## 2.4 Language Models as Planners and as Rankers
 
-Evidence that language models generate plausible multi-step plans [6], set
-against evidence that their self-evaluation and self-ranking are weaker than
-their generation [7]. The gap between these two capabilities is the opening this thesis
-works in, and §4.2 measures it directly.
+The premise of this thesis is a gap between two capabilities that are easily
+conflated: producing a plausible plan, and recognising which of several plans
+is best.
+
+On the first, the evidence is mixed in an instructive way. Valmeekam et al. [6]
+introduced PlanBench to evaluate language models on planning and reasoning
+about change, and found that models produce plans that read fluently while
+failing formal validity far more often than their fluency suggests. The
+relevant observation for this work is not that models plan badly in the
+classical-planning sense, but that *surface plausibility and correctness come
+apart* — a plan can be well-formed, well-motivated and wrong.
+
+On the second, Huang et al. [7] examined whether language models can improve
+their own reasoning by self-correction, and found that without external
+feedback they generally cannot; performance sometimes degrades after a
+self-correction pass. The failure is one of self-evaluation rather than
+generation: the model produces a candidate it cannot reliably assess.
+
+Put together, these suggest a division of labour — generate with the model,
+evaluate with something else — and that is the structure adopted here. The
+contribution of §4.2 is to measure the size of the gap in this setting rather
+than assume it: the generator writes six plans and places one first, and the
+best of its six is worth **+0.2872** more than the one it chose. That quantity
+is the headroom everything after §4.3 attempts to recover.
 
 ## 2.5 Off-Policy Evaluation
 
-Inverse propensity scoring and its self-normalised variant [9]; propensity overlap;
-why deterministic logging policies make these estimators degenerate. Relevant to
-the logging design in §3.8.
+A deployed recommender accumulates logs under whichever policy was running, and
+the natural question is what a *different* policy would have achieved on the
+same traffic. Inverse propensity scoring answers this by reweighting each
+logged outcome by the ratio of the probability the new policy would have chosen
+that action to the probability the logging policy actually did. The estimate is
+unbiased when every action the new policy might take had some chance of being
+logged.
+
+That condition is easy to violate. Swaminathan and Joachims [9] showed that the
+unbiased estimator suffers what they termed propensity overfitting when used
+for learning over rich hypothesis spaces: the optimiser is drawn toward
+policies that concentrate mass on a few heavily-weighted logged examples. Their
+self-normalised estimator divides by the sum of the importance weights,
+trading a small bias for a large reduction in variance.
+
+Two consequences shape the design here. A deterministic policy assigns
+probability one to its chosen action and zero to everything else, which makes
+the importance ratio either undefined or degenerate — so the deployed system
+samples from a softmax over scores and records the resulting probability
+vector, as described in §3.10. And because propensity-weighted estimates become
+unreliable when overlap is poor, no off-policy estimate is reported in this
+thesis; the logging exists so that such an analysis is possible once enough
+impressions under a stochastic policy have accumulated, which they have not.
+This is stated as a limitation rather than presented as an omission.
 
 ## 2.6 Research Gap
 
@@ -249,10 +338,7 @@ no ground-truth answer exists against which a verifier could be calibrated. This
 thesis occupies that gap, and §4.2 establishes that the opening it assumes is
 real: the generator's own ranking leaves +0.2872 of measurable value unclaimed.
 
-> **This is the most important paragraph in the chapter.** Rewrite it in your
-> own words once you have read the §2.1 references — a gap statement is only as
-> credible as the reading behind it, and this one is written from survey
-> abstracts rather than from the primary literature.
+
 
 # 3 Methodology
 
@@ -489,9 +575,10 @@ State is not stored. Theta is replayed from the event log on every read, so
 concurrent workers cannot diverge, a restart loses nothing, and the full update
 history is available for inspection at no additional cost.
 
-> **Framing note.** Larger step sizes make a handful of comparisons visible in
-> the ranking; they do **not** make the estimate more reliable. Present this as a
-> mechanism demonstration, not as a statistical result.
+A caveat belongs with the step size. Larger steps make a handful of
+comparisons visible in the ranking, but they do not make the resulting
+estimate more reliable; the rule exists to demonstrate the mechanism on a
+small sample, not to extract a statistically meaningful fit from one.
 
 ## 3.10 System Implementation and Deployment
 
@@ -542,6 +629,54 @@ infrastructure as code. Spend caps are enforced server-side and before the paid
 call, because the API budget is fixed and a public endpoint cannot rely on human
 monitoring.
 
+## 3.11 Experimental Design: Populations, Splits and Procedure
+
+Three experiments appear in Chapter 4, on different populations and
+different units of analysis. They are set out together here because the
+differences are easy to miss and they explain why sample sizes vary
+between tables.
+
+| | Baseline family (§4.7) | Best-of-N (§4.3–4.6) | Randomized-graph ablation (§4.8) |
+|---|---|---|---|
+| Population | 500 simulated learners | first 200 of the same 500 | the same 500 |
+| Seeds | 5 (7, 11, 23, 37, 53) | 1 (7) | 5 |
+| Unit of analysis | learner × seed → 2,500 rows | learner → 200, of which **80 held out** | learner |
+| What varies | the policy | the selection rule over identical candidates | the prerequisite graph |
+| What is held fixed | learners, reward, catalog | learners, candidates, reward | learner id, level, hours, budget, plan depth |
+| Model fitting | none — policies learn online | 120 train / 80 test, split by learner | none |
+
+**Why 200 and not 500 for best-of-N.** Each learner requires one plan
+generation call, and the candidate plans must be generated before any
+selection rule can be compared. 200 was chosen as the point at which the
+contrast was measurable within the project's API budget; §4.6 shows this
+was the binding constraint on what the experiment could resolve.
+
+**Why the split is by learner and not by plan.** All six plans for one
+learner share that learner's goal, level and budget. Splitting by plan
+would place plans from the same learner on both sides of the split, and
+the reward model would be scored partly on learners it had already seen.
+
+**Where the two reported numbers come from.** §4.2 reports means over all
+200 learners, because no model is fitted there — it compares retrieval and
+generation against random baselines, and every learner can be used. §4.3
+onward reports the 80 held-out learners only, because from that point a
+model has been fitted and the training learners are no longer independent.
+This is why §4.2 gives the LLM's first plan as 0.5200 and §4.4 gives it as
+0.5985: the same quantity on 200 learners and on the 80-learner test
+subset.
+
+**Feedback sources, and which results rest on which.**
+
+| Source | What it is | Which results use it |
+|---|---|---|
+| Simulated preferences | A logistic function of the true return gap, correct 64% of the time (§3.8) | **All of Chapter 4.** Every reported contrast. |
+| Real preferences | 52 comparisons from 6 participants through the deployed service | **No result in Chapter 4.** Reported in §5.6 as evidence about the simulator, not as a finding. |
+
+No number in Chapter 4 depends on human feedback. This is stated plainly
+because the thesis is about learning from preferences, and a reader is
+entitled to know that the preferences producing the headline result were
+generated rather than collected.
+
 ![Figure 3.1: **System architecture.** A learner's query is retrieved against the frozen catalog, six plans are generated from a 25-course shortlist, and a reward model trained on recorded preferences selects among them. Recorded comparisons reshape the scorer, not the generator. The frozen artifacts below the line are never read by any component producing a recommendation.](stage1-flow.png)
 
 **Inspector.** A second interface exposes the mechanism under study. It shows the
@@ -553,8 +688,9 @@ Across a demonstration session, surprise fell from 0.35 on the first comparison
 to 0.09 on the fifth as the model acquired the participant's preference for
 gentler plans, with the over-challenge weight moving from −0.84 to −1.26.
 
-> **Suggested figure 3.2.** A screenshot of the inspector, captioned to point at
-> the falling surprise column.
+![Figure 3.2: **The feedback inspector.** Left to right: the offline prior against the weights after real comparisons, the reordering those weights produce on a recorded plan set, and the per-comparison update trace. "Surprise" is the probability the model assigned to the plan the participant did *not* pick, before seeing their answer.](screenshots/03-inspector-weights.jpg)
+
+![Figure 3.3: **One comparison as a participant sees it.** Two generated plans with rationales assembled from measured facts; model scores are withheld. The amber note appears because this query fell in the thin-coverage band of §3.10.](screenshots/02-plan-comparison.jpg)
 
 # 4 Results
 
@@ -571,8 +707,19 @@ goal depth, starting level and hour budget. A 95% interval that spans zero is
 reported as *not established* regardless of the sign.
 
 **Splits.** The best-of-N experiment uses 200 learners, 120 for training the
-reward model and 80 held out. The baseline policy family uses the full 500-learner
-population across five seeds, giving 2,500 learner-runs per policy.
+reward model and 80 held out; §4.2 reports over all 200 because no model is
+fitted there, and §4.3 onward over the 80 held-out learners only. The baseline
+family uses the full 500-learner population across five seeds, giving 2,500
+learner-runs per policy. §3.11 sets out every population and unit of analysis
+in one table.
+
+**A note on win rates.** Baseline contrasts are paired at the (learner, seed)
+level, giving n = 2,500. `reports/statistical_analysis.md` pairs the same
+contrasts per learner after averaging over seeds, giving n = 500 and higher
+win rates (95% against 80% for learning). The means are identical; the
+dispersion is not, because averaging removes seed noise. This thesis quotes the
+per-learner-seed figures throughout. `reports/evidence_audit.md` reconciles the
+two.
 
 **Reproducibility.** Plans replay from the response cache, so the diagnostic
 analyses underlying §4.2 and §4.6 make zero API calls and produce byte-identical
@@ -820,6 +967,10 @@ most plausible route to making the planning contrast meaningful.
 written for this thesis. The reward model learning from noisy preferences is a
 realistic setup; the preferences themselves are not real people's. This is the
 largest threat to validity and is not mitigated by anything else in this list.
+§5.6 gives it substance rather than leaving it abstract: on 52 real
+comparisons the fitted weights disagree with the simulated ones in sign on
+goal coverage and under-challenge, which is the strongest available evidence
+that the simulator and real learners do not value the same things.
 
 **Generated scaffolding.** The taxonomy and prerequisite graph are
 model-generated and validated against neither a real curriculum nor a domain
@@ -846,16 +997,56 @@ slack.
 **Goal progress.** Weak across every policy, for the reasons given in §5.3.
 
 **Real feedback is demonstration, not evidence.** The deployed system collects
-genuine preferences, but at the scale reported no statistical claim can rest on
-them.
+genuine preferences, but 52 comparisons across 6 participants cannot support a
+statistical claim about seven weights.
+
+**Position bias in the collected preferences is uncorrected.** The left-hand
+plan was chosen 65% of the time. Left–right assignment is not randomised per
+comparison, so a material share of the collected signal reflects layout rather
+than judgement. This limits §5.6 specifically and should be fixed before any
+further collection.
 
 **Ethical review.** Data collection from human participants beyond the author and
 supervisor was not undertaken within the scope of this work.
 
-# 6 Conclusion
+## 5.6 What the Collected Preferences Suggest About the Simulator
 
-> Write this last, once Chapter 4 is settled. The structure below matches the
-> contributions in Chapter 1.
+52 pairwise comparisons were collected from 6 participants through the
+deployed service. This is far too little to fit seven weights — 36 training
+pairs — and **nothing in this section is a result**. It is, however, the only
+evidence the project holds on whether simulated preferences resemble real
+ones, and it does not fully agree.
+
+| Feature | Simulated fit | Fitted on 52 real comparisons |
+|---|---|---|
+| Mean over-challenge | −0.838 | −0.260 |
+| Mean under-challenge | −0.184 | **+1.091** |
+| Goal coverage | +0.366 | **−1.520** |
+| Mean topic match | +0.313 | −0.020 |
+| Mean rating | +0.182 | +0.137 |
+| Position-weighted difficulty | +0.368 | +0.105 |
+
+Three observations. Real participants preferred *easier* plans: the
+under-challenge weight flips from a penalty to the largest positive
+coefficient. Goal coverage flips sign — the frozen reward pays for covering
+skills the learner lacks, and participants chose against it, plausibly because
+a plan covering more goal skills is necessarily broader and harder, in which
+case the two effects are one preference measured twice. And held-out accuracy
+on real preferences was 0.750 against 0.602 on simulated, so participants were
+*more* self-consistent than the 64%-accurate noise model assumes.
+
+**The caveat that limits all of this.** The left-hand plan was chosen 65% of
+the time. Position bias of that magnitude means a material share of the signal
+is layout rather than judgement, and randomising left–right assignment per
+comparison is a prerequisite for interpreting any of these weights. It is a
+small change to the study application and has not yet been made.
+
+Taken together this bears directly on Limitation 1 below. It does not
+invalidate Chapter 4, whose claims are explicitly about learning from
+simulated preferences, but it does suggest the frozen reward encodes a
+preference for goal coverage that the people tested did not share.
+
+# 6 Conclusion
 
 ## 6.1 Summary
 
@@ -869,7 +1060,17 @@ model regressed directly on the true reward.
 The decomposition in §4.2 locates the value: retrieval dominates, generation
 contributes substantially, and the language model's self-ranking leaves
 measurable value unclaimed. That unclaimed value is what preference learning
-recovers, and §4.6 establishes how much of it is reachable with this design.
+recovers, and §4.6 establishes how much of it is reachable with this design —
+approximately half, with the remainder bounded by the size of the evaluation
+rather than by the model.
+
+Two results qualify the claim and both are worth carrying forward. The
+randomized-graph ablation (§4.8) passes only for the policies that learn,
+which is the pattern a genuine signal would produce but a narrow one. And the
+52 real comparisons in §5.6, while far too few to fit a model, disagree with
+the simulated preferences on the sign of goal coverage. The method works on
+the preferences it was given; whether those preferences resemble a learner's
+is the question the next study has to answer.
 
 ## 6.2 Future Work
 
@@ -881,28 +1082,23 @@ meaningful.
 **Separate the two explanations in §5.1** — ranking objective against noise as
 regularisation — with a sample-size sweep at matched label noise.
 
-**Collect real preferences at scale.** The deployed system, the logging and the
-online update path all function. Replacing simulated comparisons with several
-hundred human judgements would convert the central claim from reinforcement
-learning from simulated feedback to reinforcement learning from human feedback,
-which is a materially stronger result.
+**Collect real preferences at scale, with left–right randomised.** The
+deployed system, the logging and the online update path all function, and 52
+comparisons have been gathered. Two changes make further collection worth
+doing: randomising which plan appears on the left, which §5.6 shows is
+currently confounding the signal at 65/35, and obtaining ethical approval for
+participants beyond the author and supervisor. Several hundred judgements
+would convert the central claim from reinforcement learning from simulated
+feedback to reinforcement learning from human feedback.
 
 **Validate the scope classifier** against the prepared audit sample, closing the
 one unmeasured step in the data chapter.
 
 # Bibliography
 
-> **Seventeen verified entries.** Every reference below was checked against the publisher's or
-> arXiv's own record rather than written from memory, and each carries a link
-> so you can confirm it in one click. **Verify them again before submission** —
-> page ranges in particular are the field most often wrong in secondary
-> indexes. Three carry title discrepancies worth knowing about, noted inline.
->
-> §2.1 and §2.6 are now written against four verified surveys and primary
-> papers [11]–[14], but from their abstracts and metadata rather than full
-> readings. Read those four before defending the claims, and expect to add five
-> to fifteen further entries placing the work against *named systems* rather
-> than against surveys.
+Each entry was checked against the publisher's or arXiv's own record. Three
+carry title discrepancies between the preprint and the proceedings version;
+these are noted inline so the reader can match whichever is cited.
 
 ## Preference-based reward modelling
 
@@ -1001,11 +1197,10 @@ https://www.kaggle.com/datasets/yosefxx590/coursera-courses-and-skills-dataset-2
 [17] E. Rustam, "Coursera Dataset," Kaggle, 2024. Licence: CC0-1.0. [Online].
 Available: https://www.kaggle.com/datasets/elvinrustam/coursera-dataset
 
-> **On the dataset entries.** Licences and field inventories were verified
-> against the live Kaggle pages on 20 September 2026 and are recorded in
-> `config/sources.yaml`. Entry [15] carries no stated licence, which is why no
-> raw text from it is exported; say so explicitly in §3.1 if a reader is likely
-> to ask.
+Dataset licences and field inventories were verified against the live Kaggle
+pages on 20 September 2026 and are recorded in `config/sources.yaml`. Entry
+[15] carries no stated licence, which is why no raw text from it is
+redistributed with this work.
 
 # A Supplementary Tables
 
@@ -1028,7 +1223,46 @@ Bundle `poc-v6-stratified`, hash `54539899ab24e4b4`.
 Term shares of total reward spread over the arm pool: level 29%, topic 29%, time
 19%, quality 16%, missing metadata 7%.
 
-## A.2 Reproducibility Map
+## A.2 Evidence Map: Which Source Supports Each Result
+
+Every numeric claim in Chapter 4 is recomputed from its source and compared
+against the text by `python -m pipeline.evidence_audit`, which writes
+`reports/evidence_audit.md` and exits non-zero on any disagreement. At the
+time of writing it verifies **45 of 45** headline claims.
+
+| § | Result | Source of truth |
+|---|---|---|
+| 3.1–3.2 | 1,899 arms; 3,522 → 3,362 → 1,899 attrition | `data/agent/arm_features.parquet`, `reports/attrition_funnel.md` |
+| 3.3 | 188 skills; 254 edges; 122 plans | `data/catalog/skills.parquet`, `data/world/skill_prereqs.parquet`, `data/world/study_plans.parquet` |
+| 3.4 | 500 learners, stratified 200/175/125 | `data/world/users.parquet`, `reports/simulator.md` |
+| 3.5 | Frozen weights, hash `54539899ab24e4b4` | `reports/preregistration_poc-v6-stratified.md` |
+| 4.2 | Retrieval +1.9828, generation +0.3707, ordering +0.2872; plan diversity | `reports/stage1_evidence.md` |
+| 4.3–4.4 | Policy means; all four paired contrasts; the tie decomposition | `data/agent/bestofn_selection_poc-v6-stratified.parquet`, `reports/bestofn_poc-v6-stratified.md` |
+| 4.5 | Learned weights; the 4.6:1 asymmetry | `data/agent/reward_model_poc-v6-stratified.json` |
+| 4.6 | Selector ceiling; label-noise, feature and regularisation ablations | `reports/stage1_diagnosis.md` |
+| 4.7 | Learning and planning contrasts; per-seed means | `data/agent/experiment_poc-v6-stratified.parquet`, `reports/experiment_poc-v6-stratified.md` |
+| 4.8 | Randomized-graph ablation, depth-matched | `reports/ablation_randomized_graph.md` |
+| 5.3 | Goal-term diagnosis | `reports/stage1_diagnosis.md` |
+| 5.6 | 52 real comparisons; weights fitted on them; position bias | `reports/real_feedback.md` |
+| — | All contrasts with paired Cohen's *d* | `reports/statistical_analysis.md` |
+
+### A.2.1 One quantity reported two ways
+
+`reports/statistical_analysis.md` pairs the baseline contrasts per learner
+after averaging over seeds (n = 500); `reports/experiment_poc-v6-stratified.md`
+pairs them per learner-seed (n = 2,500). The means are identical. The win
+rates are not — 95% against 80% for learning, 60% against 53% for planning —
+because averaging over seeds removes noise that would otherwise flip the sign
+of a small difference.
+
+Both are defensible. Averaging first treats a learner as the unit of
+observation, which is what a learner is; pairing per seed treats each run as
+an observation, which gives a larger sample at the cost of treating correlated
+runs as independent. **This thesis quotes the per-learner-seed figures
+throughout**, and `reports/evidence_audit.md` records the reconciliation so
+the difference is not discovered as a contradiction.
+
+## A.3 Reproducibility Map
 
 | Claim | Source |
 |---|---|
