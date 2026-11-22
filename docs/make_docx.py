@@ -27,8 +27,10 @@ HEAD = "Calibri Light"
 MONO = "Consolas"
 INK = RGBColor(0x1A, 0x1F, 0x26)
 MUTED = RGBColor(0x5A, 0x65, 0x72)
-ACCENT = RGBColor(0x0D, 0x61, 0x58)
-ACCENT2 = RGBColor(0x3A, 0x4A, 0x9F)
+# Headings print black. The teal that was here read as green on
+# screen and in print, which is not what a thesis wants.
+ACCENT = RGBColor(0x00, 0x00, 0x00)
+ACCENT2 = RGBColor(0x00, 0x00, 0x00)
 
 SOURCES: List[Tuple[str, Path, str]] = [
     ("", DOCS / "stage1-report.md", "main"),
@@ -109,7 +111,7 @@ def flush_table(doc, rows: List[str]):
             txt = row[j] if j < len(row) else ""
             add_runs(p, txt, size=9.5, color=INK if i else RGBColor(0xFF, 0xFF, 0xFF))
             if i == 0:
-                shade(cell, "0D6158")
+                shade(cell, "262626")   # was teal; headings print black
                 for r in p.runs:
                     r.bold = True
             elif i % 2 == 0:

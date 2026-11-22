@@ -33,11 +33,9 @@ To those who kept asking what I was building, and listened to the answer.
 
 # Acknowledgments
 
-I thank my advisor, Prof. Xuemin Jin, for his guidance throughout this work.
+I thank my advisor, Prof. Xuemin Jin, for his guidance throughout this work. He supported me in exploring every possibility for the thesis, encouraged me to build and test the system itself, and gave feedback that consistently made it more useful than it would otherwise have been.
 
-*[One paragraph on your advisor, naming what he specifically did; one on
-family. About 200 words. This is the only page in the thesis where you are
-not making an argument — replace this placeholder before submission.]*
+Most personally, I want to thank Beth Noveck, my former co-op program advisor. She gave me the chance to work on real LLM products and helped me see how these tools can improve the communities we live in. That experience is what led me to this thesis.
 
 # Abstract of the Thesis
 
